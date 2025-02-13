@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "module": "CommonJS",
+    "target": "ES6",
+    "strict": true,
+    "baseUrl": "./",
+    "paths": {
+      "@root/*": ["./*"],
+      "@models/*": ["./models/*"],
+      "@database/*": ["./database/*"]
+    }
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,12 +1,40 @@
 {
   "name": "skincare_be",
   "version": "1.0.0",
-  "main": "index.js",
+  "homepage": "https://github.com/realjeremy04/Skincare_BE#readme",
+  "bugs": {
+    "url": "https://github.com/realjeremy04/Skincare_BE/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/realjeremy04/Skincare_BE.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index"
+    "start": "nodemon index"
   },
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "module-alias": "^2.2.3",
+    "mongoose": "^8.10.0",
+    "nodemon": "^3.1.9"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [],
+  "description": "",
+  "_moduleAliases": {
+    "@root": ".",
+    "@models": "./models",
+    "@database": "./database"
+  }
 }
