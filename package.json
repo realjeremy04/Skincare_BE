@@ -22,19 +22,30 @@
     "express": "^4.21.2",
     "module-alias": "^2.2.3",
     "mongoose": "^8.10.0",
-    "nodemon": "^3.1.9"
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.9",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
-    "@types/node": "^22.13.1",
+    "$types/express": "^5.0.0",
+    "$types/node": "^22.13.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   },
   "keywords": [],
   "description": "",
   "_moduleAliases": {
-    "@root": ".",
-    "@models": "./models",
-    "@database": "./database"
+    "$root": ".",
+    "$models": "./models",
+    "$database": "./database",
+    "$controllers": "./controllers",
+    "$configs": "./configs",
+    "$middlewares": "./middlewares",
+    "$routes": "./routes",
+    "$services": "./services",
+    "$utils": "./utils",
+    "$helpers": "./helpers",
+    "$types": "./types"
   }
 }

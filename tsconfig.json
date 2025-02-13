@@ -7,9 +7,17 @@
     "strict": true,
     "baseUrl": "./",
     "paths": {
-      "@root/*": ["./*"],
-      "@models/*": ["./models/*"],
-      "@database/*": ["./database/*"]
+      "$root/*": ["./*"],
+      "$models/*": ["./models/*"],
+      "$database/*": ["./database/*"],
+      "$controllers/*": ["./controllers/*"],
+      "$configs/*": ["./configs/*"],
+      "$middlewares/*": ["./middlewares/*"],
+      "$services/*": ["./services/*"],
+      "$utils/*": ["./utils/*"],
+      "$routes/*": ["./routes/*"],
+      "$helpers/*": ["./helpers/*"],
+      "$types/*": ["./types/*"]
     }
   },
   "include": ["./**/*.ts"],
