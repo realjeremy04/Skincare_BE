@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { IPaymentMethod } from "./IPaymentMethod";
 
 const paymentMethodSchema = new Schema<IPaymentMethod>({

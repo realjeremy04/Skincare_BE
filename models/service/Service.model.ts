@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { IService } from "./IService";
 
 const serviceSchema = new Schema<IService>({

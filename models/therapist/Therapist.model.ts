@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { ITherapist } from "./ITherapist";
 
 const TherapistsSchema = new Schema<ITherapist>({
@@ -31,6 +31,10 @@ const TherapistsSchema = new Schema<ITherapist>({
         },
       },
     ],
+    required: true,
+  },
+  experience: {
+    type: String,
     required: true,
   },
 });

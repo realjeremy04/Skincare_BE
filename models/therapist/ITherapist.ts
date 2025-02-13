@@ -4,6 +4,7 @@ export interface ITherapist {
   accountId: Types.ObjectId;
   specialization: Array<Types.ObjectId>;
   certification: ICertification[];
+  experience: string;
 }
 
 interface ICertification {

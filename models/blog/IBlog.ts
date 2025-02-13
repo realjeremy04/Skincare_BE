@@ -4,11 +4,11 @@ export interface IBlog {
   staffId: Types.ObjectId;
   title: string;
   status: string;
-  content: IContent[];
+  content: string;
+  contentId: IContent[];
 }
 
 export interface IContent {
-  content: string;
   image: string;
   imageDescription: string;
 }

@@ -20,7 +20,6 @@ const AccountSchema = new Schema<IAccount>({
   },
   dob: {
     type: Date,
-    required: true,
   },
   isActive: {
     type: Boolean,

@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { IFeedback } from "./IFeedback";
 
 const feedbackSchema = new Schema<IFeedback>({
@@ -24,7 +24,6 @@ const feedbackSchema = new Schema<IFeedback>({
   },
   images: {
     type: String,
-    required: true,
   },
   comment: {
     type: String,

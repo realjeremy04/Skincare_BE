@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { IQuestion } from "./IQuestion";
 
 const questionSchema = new Schema<IQuestion>({
@@ -6,21 +6,11 @@ const questionSchema = new Schema<IQuestion>({
     type: String,
     required: true,
   },
-  answer: [
-    {
-      title: {
-        type: String,
-        required: true,
-      },
-      image: {
-        type: String,
-      },
-      point: {
-        type: Number,
-        required: true,
-      },
-    },
-  ],
+  answerId: {
+    type: [Schema.Types.ObjectId],
+    ref: "Answer",
+    required: true,
+  },
 });
 
-export default mongoose.model("Question", questionSchema);
+export default mongoose.model<IQuestion>("Question", questionSchema);

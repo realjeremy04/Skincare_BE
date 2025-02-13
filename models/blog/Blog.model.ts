@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { IBlog } from "./IBlog";
 
 const blogSchema = new Schema<IBlog>({
@@ -15,12 +15,12 @@ const blogSchema = new Schema<IBlog>({
     type: String,
     required: true,
   },
-  content: [
+  content: {
+    type: String,
+    required: true,
+  },
+  contentId: [
     {
-      content: {
-        type: String,
-        required: true,
-      },
       image: {
         type: String,
         required: true,
