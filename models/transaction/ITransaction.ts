@@ -1,7 +1,8 @@
+import { Types } from "mongoose";
+
 export interface ITransaction {
-  customerId: string;
-  appointmentId: string;
-  amount: Number;
-  paymentMethod: string;
+  customerId: Types.ObjectId;
+  appointmentId: Types.ObjectId;
+  paymentMethodId: Types.ObjectId;
   status: string;
 }
