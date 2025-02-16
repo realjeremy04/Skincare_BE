@@ -3,11 +3,12 @@ import { Types } from "mongoose";
 export interface IUserQuiz {
   accountId: Types.ObjectId;
   scoreBandId: Types.ObjectId;
+  result: IResult[];
   totalPoint: Number;
-  questionResult: IQuestionResult[];
 }
 
-interface IQuestionResult {
-  questionId: Types.ObjectId;
-  answerId: [Types.ObjectId];
+interface IResult {
+  title: string;
+  answer: string;
+  point: number;
 }

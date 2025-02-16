@@ -1,6 +1,9 @@
-import { Types } from "mongoose";
-
 export interface IQuestion {
-  question: string;
-  answerId: [Types.ObjectId];
+  title: string;
+  answers: IAnswer[];
+}
+
+export interface IAnswer {
+  title: string;
+  point: Number;
 }

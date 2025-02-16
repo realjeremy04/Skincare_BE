@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { ITransaction } from "$types/transaction.interface";
+import { PaymentMethodEnum } from "$root/enums/PaymentMethodEnum";
 
 const transactionSchema = new Schema<ITransaction>(
   {
@@ -13,10 +14,10 @@ const transactionSchema = new Schema<ITransaction>(
       ref: "Appointment",
       required: true,
     },
-    paymentMethodId: {
-      type: Schema.Types.ObjectId,
-      ref: "PaymentMethod",
+    paymentMethod: {
+      type: String,
       required: true,
+      enum: Object.values(PaymentMethodEnum),
     },
     status: {
       type: String,

@@ -1,22 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 import { IScoreband } from "$types/scoreband.interface";
-import exp = require("constants");
 
 const ScorebandSchema = new Schema<IScoreband>({
-  roadmap: {
-    type: [
-      {
-        serviceId: {
-          type: Schema.Types.ObjectId,
-          ref: "Service",
-          required: true,
-        },
-        estimate: {
-          type: String,
-          required: true,
-        },
-      },
-    ],
+  roadmapId: {
+    type: Schema.Types.ObjectId,
     required: true,
   },
   minPoint: {

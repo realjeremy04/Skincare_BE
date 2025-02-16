@@ -5,31 +5,28 @@ const userQuizSchema = new Schema<IUserQuiz>(
   {
     accountId: {
       type: Schema.Types.ObjectId,
-      ref: "Account",
       required: true,
     },
     scoreBandId: {
       type: Schema.Types.ObjectId,
-      ref: "Scoreband",
       required: true,
     },
-    questionResult: {
-      type: [
-        {
-          questionId: {
-            type: Schema.Types.ObjectId,
-            ref: "Question",
-            required: true,
-          },
-          answerId: {
-            type: [Schema.Types.ObjectId],
-            ref: "Answer",
-            required: true,
-          },
+    result: [
+      {
+        title: {
+          type: String,
+          required: true,
         },
-      ],
-      required: true,
-    },
+        answer: {
+          type: String,
+          required: true,
+        },
+        point: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
     totalPoint: {
       type: Number,
       required: true,
