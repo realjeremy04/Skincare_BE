@@ -1,5 +1,8 @@
-const logger = require("morgan");
-const router = require("express").Router;
+import { Router } from "express";
+import accountRoutes from "./Account.route";
 
+const router = Router();
 
-module.exports = router;
+router.use("/account", accountRoutes);
+
+export default router;

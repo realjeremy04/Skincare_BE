@@ -14,11 +14,11 @@ const options = {
     },
     servers: [
       {
-        url: process.env.SERVER_PORT,
+        url: "http://localhost:8080/",
       },
     ],
   },
-  apis: ["./routes/*.ts"],
+  apis: ["./controllers/*.ts"],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
