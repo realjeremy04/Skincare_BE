@@ -71,7 +71,9 @@ const getAllAccounts = async (
   try {
     const users = await Account.find();
 
-    res.status(404).json({ message: "No accounts found" });
+    if (!users) {
+      res.status(404).json({ message: "No accounts found" });
+    }
 
     res.status(200).json(users);
   } catch (err: Error | any) {
@@ -240,7 +242,7 @@ const deleteAccount = async (
 ) => {
   try {
     const user = await Account.findByIdAndDelete(req.params.id);
-    res.status(200).json(user);
+    res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
   }
@@ -284,7 +286,9 @@ const deleteAccount = async (
  */
 const updateAccount = async (req: Request, res: Response) => {
   try {
-    const user = await Account.findByIdAndUpdate(req.params.id, req.body);
+    const user = await Account.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
     res.status(200).json(user);
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });

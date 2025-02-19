@@ -72,7 +72,9 @@ const getAllBlog = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const blogs = await Blog.find();
 
-    res.status(404).json({ message: "No blogs found" });
+    if (!blogs) {
+      res.status(404).json({ message: "No blogs found" });
+    }
 
     res.status(200).json(blogs);
   } catch (err: Error | any) {
@@ -231,7 +233,7 @@ const createBlog = async (req: Request, res: Response, next: NextFunction) => {
 const deleteBlog = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const blog = await Blog.findByIdAndDelete(req.params.id);
-    res.status(200).json(blog);
+    res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
   }
@@ -275,7 +277,9 @@ const deleteBlog = async (req: Request, res: Response, next: NextFunction) => {
  */
 const updateBlog = async (req: Request, res: Response) => {
   try {
-    const blog = await Blog.findByIdAndUpdate(req.params.id, req.body);
+    const blog = await Blog.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
     res.status(200).json(blog);
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });

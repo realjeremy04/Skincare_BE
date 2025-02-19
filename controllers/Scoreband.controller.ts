@@ -65,7 +65,9 @@ const getAllScoreband = async (
   try {
     const scorebands = await Scoreband.find();
 
-    res.status(404).json({ message: "No scorebands found" });
+    if (!scorebands) {
+      res.status(404).json({ message: "No scorebands found" });
+    }
 
     res.status(200).json(scorebands);
   } catch (err: Error | any) {
@@ -238,7 +240,7 @@ const deleteScoreband = async (
 ) => {
   try {
     const scoreband = await Scoreband.findByIdAndDelete(req.params.id);
-    res.status(200).json(scoreband);
+    res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
   }
@@ -284,7 +286,8 @@ const updateScoreband = async (req: Request, res: Response) => {
   try {
     const scoreband = await Scoreband.findByIdAndUpdate(
       req.params.id,
-      req.body
+      req.body,
+      { new: true }
     );
     res.status(200).json(scoreband);
   } catch (err: Error | any) {
