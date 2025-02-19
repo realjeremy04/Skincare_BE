@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { IShifts } from "$types/shifts.interface";
+import exp = require("constants");
 
 const shiftsSchema = new Schema<IShifts>({
   slotsId: {
@@ -27,4 +28,6 @@ const shiftsSchema = new Schema<IShifts>({
   },
 });
 
-export default mongoose.model<IShifts>("Shifts", shiftsSchema);
+const Shifts = mongoose.model<IShifts>("Shifts", shiftsSchema);
+
+export default Shifts;
