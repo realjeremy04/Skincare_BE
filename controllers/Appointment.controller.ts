@@ -78,7 +78,9 @@ const getAllAppointment = async (
   try {
     const appointments = await Appointment.find();
 
-    res.status(404).json({ message: "No appointments found" });
+    if (!appointments) {
+      res.status(404).json({ message: "No appointments found" });
+    }
 
     res.status(200).json(appointments);
   } catch (err: Error | any) {
@@ -249,7 +251,7 @@ const deleteAppointment = async (
 ) => {
   try {
     const appointment = await Appointment.findByIdAndDelete(req.params.id);
-    res.status(200).json(appointment);
+    res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
   }
@@ -295,7 +297,10 @@ const updateAppointment = async (req: Request, res: Response) => {
   try {
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
-      req.body
+      req.body,
+      {
+        new: true,
+      }
     );
     res.status(200).json(appointment);
   } catch (err: Error | any) {

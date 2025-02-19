@@ -68,7 +68,9 @@ const getAllQuestion = async (
   try {
     const questions = await Question.find();
 
-    res.status(404).json({ message: "No questions found" });
+    if (!questions) {
+      res.status(404).json({ message: "No questions found" });
+    }
 
     res.status(200).json(questions);
   } catch (err: Error | any) {
@@ -228,7 +230,7 @@ const deleteQuestion = async (
 ) => {
   try {
     const question = await Question.findByIdAndDelete(req.params.id);
-    res.status(200).json(question);
+    res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
   }
@@ -272,7 +274,9 @@ const deleteQuestion = async (
  */
 const updateQuestion = async (req: Request, res: Response) => {
   try {
-    const question = await Question.findByIdAndUpdate(req.params.id, req.body);
+    const question = await Question.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
     res.status(200).json(question);
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });

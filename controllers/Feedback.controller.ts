@@ -71,7 +71,9 @@ const getAllFeedback = async (
   try {
     const feedbacks = await Feedback.find();
 
-    res.status(404).json({ message: "No feedbacks found" });
+    if (!feedbacks) {
+      res.status(404).json({ message: "No feedbacks found" });
+    }
 
     res.status(200).json(feedbacks);
   } catch (err: Error | any) {
@@ -240,7 +242,7 @@ const deleteFeedback = async (
 ) => {
   try {
     const feedback = await Feedback.findByIdAndDelete(req.params.id);
-    res.status(200).json(feedback);
+    res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
   }
@@ -284,7 +286,9 @@ const deleteFeedback = async (
  */
 const updateFeedback = async (req: Request, res: Response) => {
   try {
-    const feedback = await Feedback.findByIdAndUpdate(req.params.id, req.body);
+    const feedback = await Feedback.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
     res.status(200).json(feedback);
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
