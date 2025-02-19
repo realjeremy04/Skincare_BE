@@ -7,6 +7,7 @@ import feedbackRoutes from "./Feedback.route";
 import shiftsRoutes from "./Shifts.route";
 import questionRoutes from "./Question.route";
 import scorebandRoutes from "./Scoreband.route";
+import slotsRoutes from "./Slots.route";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/feedback", feedbackRoutes);
 router.use("/shifts", shiftsRoutes);
 router.use("/question", questionRoutes);
 router.use("/scoreband", scorebandRoutes);
+router.use("/slots", slotsRoutes);
 
 export default router;
