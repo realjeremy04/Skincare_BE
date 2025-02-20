@@ -153,21 +153,21 @@ const createScoreband = async (
 ) => {
   try {
     if (
-      !req.body.accountId ||
-      !req.body.appointmentId ||
-      !req.body.serviceId ||
-      !req.body.therapistId ||
-      !req.body.rating
+      !req.body.roadmapId ||
+      !req.body.minPoint ||
+      !req.body.maxPoint ||
+      !req.body.typeOfSkin ||
+      !req.body.skinExplanation
     ) {
       res.status(400).json({ message: "Bad request" });
     }
 
     const scoreband = new Scoreband({
-      accountId: req.body.accountId,
-      appointmentId: req.body.appointmentId,
-      serviceId: req.body.serviceId,
-      therapistId: req.body.therapistId,
-      rating: req.body.rating,
+      roadmapId: req.body.roadmapId,
+      minPoint: req.body.minPoint,
+      maxPoint: req.body.maxPoint,
+      typeOfSkin: req.body.typeOfSkin,
+      skinExplanation: req.body.skinExplanation,
     });
 
     const newScoreband = await scoreband.save();

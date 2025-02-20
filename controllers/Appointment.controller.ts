@@ -308,11 +308,63 @@ const updateAppointment = async (req: Request, res: Response) => {
   }
 };
 
+//Get Appointment by CustomerId
+/**
+ * @swagger
+ * /api/appointment/customer/{customerId}:
+ *   get:
+ *     summary: Retrieve all appointments for a specific customer
+ *     tags:
+ *       - Appointment
+ *     parameters:
+ *       - in: path
+ *         name: customerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The customer ID
+ *     responses:
+ *       200:
+ *         description: A list of appointments for the customer
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
+ *       404:
+ *         description: No appointments found for this customer
+ *       500:
+ *         description: Server error
+ */
+const getAppointmentsByCustomerId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const appointments = await Appointment.find({
+      customerId: req.params.customerId,
+    });
+
+    if (!appointments || appointments.length === 0) {
+      res
+        .status(404)
+        .json({ message: "No appointments found for this customer" });
+    }
+
+    res.status(200).json(appointments);
+  } catch (err: Error | any) {
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 const AppointmentAPI = {
   getAppointment,
   getAllAppointment,
   createAppointment,
   deleteAppointment,
   updateAppointment,
+  getAppointmentsByCustomerId,
 };
 export default AppointmentAPI;
