@@ -64,17 +64,19 @@ const getAllQuestion = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const questions = await Question.find();
 
-    if (!questions) {
+    if (!questions || questions.length === 0) {
       res.status(404).json({ message: "No questions found" });
+      return;
     }
 
     res.status(200).json(questions);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -105,17 +107,23 @@ const getAllQuestion = async (
  *       500:
  *         description: Server error
  */
-const getQuestion = async (req: Request, res: Response, next: NextFunction) => {
+const getQuestion = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const question = await Question.findById(req.params.id);
 
     if (!question) {
       res.status(404).json({ message: "Question not found" });
+      return;
     }
 
     res.status(200).json(question);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -149,10 +157,11 @@ const createQuestion = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     if (!req.body.title || !req.body.answers) {
       res.status(400).json({ message: "Bad request" });
+      return;
     }
 
     const question = new Question({
@@ -164,6 +173,7 @@ const createQuestion = async (
     res.status(200).json(newQuestion);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -227,12 +237,17 @@ const deleteQuestion = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    const question = await Question.findByIdAndDelete(req.params.id);
+    const deleteQuestion = await Question.findByIdAndDelete(req.params.id);
+    if (!deleteQuestion) {
+      res.status(404).json({ message: "Question not found" });
+      return;
+    }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
   }
 };
 
@@ -272,14 +287,25 @@ const deleteQuestion = async (
  *       500:
  *         description: Server error
  */
-const updateQuestion = async (req: Request, res: Response) => {
+const updateQuestion = async (req: Request, res: Response): Promise<void> => {
   try {
-    const question = await Question.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    res.status(200).json(question);
+    const updatedQuestion = await Question.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+      }
+    );
+    if (!updatedQuestion) {
+      res.status(404).json({ message: "Question not found" });
+      return;
+    }
+    res
+      .status(200)
+      .json({ message: "Question updated successfully", updatedQuestion });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
   }
 };
 

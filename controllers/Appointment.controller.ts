@@ -74,17 +74,19 @@ const getAllAppointment = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const appointments = await Appointment.find();
 
-    if (!appointments) {
+    if (!appointments || appointments.length === 0) {
       res.status(404).json({ message: "No appointments found" });
+      return;
     }
 
     res.status(200).json(appointments);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -119,17 +121,19 @@ const getAppointment = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const appointment = await Appointment.findById(req.params.id);
 
     if (!appointment) {
       res.status(404).json({ message: "Appointment not found" });
+      return;
     }
 
     res.status(200).json(appointment);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -163,7 +167,7 @@ const createAppointment = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     if (
       !req.body.therapistId ||
@@ -172,6 +176,7 @@ const createAppointment = async (
       !req.body.serviceId
     ) {
       res.status(400).json({ message: "Bad request" });
+      return;
     }
 
     const appointment = new Appointment({
@@ -185,6 +190,7 @@ const createAppointment = async (
     res.status(200).json(newAppointment);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -248,12 +254,19 @@ const deleteAppointment = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    const appointment = await Appointment.findByIdAndDelete(req.params.id);
+    const deletedAppointment = await Appointment.findByIdAndDelete(
+      req.params.id
+    );
+    if (!deletedAppointment) {
+      res.status(404).json({ message: "Appointment not found" });
+      return;
+    }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
   }
 };
 
@@ -293,18 +306,82 @@ const deleteAppointment = async (
  *       500:
  *         description: Server error
  */
-const updateAppointment = async (req: Request, res: Response) => {
+const updateAppointment = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const appointment = await Appointment.findByIdAndUpdate(
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
         new: true,
       }
     );
-    res.status(200).json(appointment);
+    if (!updatedAppointment) {
+      res.status(404).json({ message: "Appointment not found" });
+      return;
+    }
+    res.status(200).json({
+      message: "Appointment updated successfully",
+      updatedAppointment,
+    });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
+  }
+};
+
+//Get Appointment by CustomerId
+/**
+ * @swagger
+ * /api/appointment/customer/{customerId}:
+ *   get:
+ *     summary: Retrieve all appointments for a specific customer
+ *     tags:
+ *       - Appointment
+ *     parameters:
+ *       - in: path
+ *         name: customerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The customer ID
+ *     responses:
+ *       200:
+ *         description: A list of appointments for the customer
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
+ *       404:
+ *         description: No appointments found for this customer
+ *       500:
+ *         description: Server error
+ */
+const getAppointmentsByCustomerId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const appointments = await Appointment.find({
+      customerId: req.params.customerId,
+    });
+
+    if (!appointments || appointments.length === 0) {
+      res
+        .status(404)
+        .json({ message: "No appointments found for this customer" });
+      return;
+    }
+
+    res.status(200).json(appointments);
+  } catch (err: Error | any) {
+    res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -314,5 +391,6 @@ const AppointmentAPI = {
   createAppointment,
   deleteAppointment,
   updateAppointment,
+  getAppointmentsByCustomerId,
 };
 export default AppointmentAPI;

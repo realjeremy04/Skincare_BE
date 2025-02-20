@@ -67,17 +67,19 @@ const getAllFeedback = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const feedbacks = await Feedback.find();
 
-    if (!feedbacks) {
+    if (!feedbacks || feedbacks.length === 0) {
       res.status(404).json({ message: "No feedbacks found" });
+      return;
     }
 
     res.status(200).json(feedbacks);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -108,17 +110,23 @@ const getAllFeedback = async (
  *       500:
  *         description: Server error
  */
-const getFeedback = async (req: Request, res: Response, next: NextFunction) => {
+const getFeedback = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const feedback = await Feedback.findById(req.params.id);
 
     if (!feedback) {
       res.status(404).json({ message: "Feedback not found" });
+      return;
     }
 
     res.status(200).json(feedback);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -152,7 +160,7 @@ const createFeedback = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     if (
       !req.body.accountId ||
@@ -162,6 +170,7 @@ const createFeedback = async (
       !req.body.rating
     ) {
       res.status(400).json({ message: "Bad request" });
+      return;
     }
 
     const feedback = new Feedback({
@@ -176,6 +185,7 @@ const createFeedback = async (
     res.status(200).json(newFeedback);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -239,12 +249,17 @@ const deleteFeedback = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    const feedback = await Feedback.findByIdAndDelete(req.params.id);
+    const deletedFeedback = await Feedback.findByIdAndDelete(req.params.id);
+    if (!deletedFeedback) {
+      res.status(404).json({ message: "Feedback not found" });
+      return;
+    }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
   }
 };
 
@@ -284,14 +299,25 @@ const deleteFeedback = async (
  *       500:
  *         description: Server error
  */
-const updateFeedback = async (req: Request, res: Response) => {
+const updateFeedback = async (req: Request, res: Response): Promise<void> => {
   try {
-    const feedback = await Feedback.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    res.status(200).json(feedback);
+    const updatedFeedback = await Feedback.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+      }
+    );
+    if (!updatedFeedback) {
+      res.status(404).json({ message: "Feedback not found" });
+      return;
+    }
+    res
+      .status(200)
+      .json({ message: "Feedback updated successfully", updatedFeedback });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
   }
 };
 
