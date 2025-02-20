@@ -29,66 +29,99 @@ import Slots from "$models/Slots.model";
  *         - endTime
  */
 
+//Get all slots
 /**
  * @swagger
- * /slots:
+ * /api/slots:
  *   get:
- *     summary: Get all slots
+ *     summary: Retrieve a list of all slots
+ *     tags:
+ *       - Slots
  *     responses:
  *       200:
- *         description: A list of slots
+ *         description: A list of slot
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Slots'
  *       404:
- *         description: No slots found
+ *         description: No slot found
+ *       500:
+ *         description: Server error
  */
-const getAllSlots = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const slots = await Slots.find();
-        if (!slots.length) {
-            res.status(404).json({ message: "No slots found" });
-            return;
-        }
-        res.status(200).json(slots);
-    } catch (err) {
-        next(err);
+const getAllSlots = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const slots = await Slots.find();
+    if (!slots || slots.length === 0) {
+      res.status(404).json({ message: "No slots found" });
+      return;
     }
+    res.status(200).json(slots);
+  } catch (err: Error | any) {
+    res.status(500).json({ message: "Internal Server Error" });
+    return;
+  }
 };
 
+//Get a single slot
 /**
  * @swagger
- * /slots/{slotId}:
+ * /api/slots/{id}:
  *   get:
- *     summary: Get a single slot by ID
+ *     summary: Retrieve a single slot by ID
+ *     tags:
+ *       - Slots
  *     parameters:
  *       - in: path
- *         name: slotId
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the slot to retrieve
+ *         description: The slot ID
  *     responses:
  *       200:
- *         description: Slot details
+ *         description: A single slot
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Slots'
  *       404:
  *         description: Slot not found
+ *       500:
+ *         description: Server error
  */
-const getSlot = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const slot = await Slots.findById(req.params.slotId);
-        if (!slot) {
-            res.status(404).json({ message: "Slot not found" });
-            return;
-        }
-        res.status(200).json(slot);
-    } catch (err) {
-        next(err);
+const getSlot = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const slot = await Slots.findById(req.params.slotId);
+    if (!slot) {
+      res.status(404).json({ message: "Slot not found" });
+      return;
     }
+    res.status(200).json(slot);
+  } catch (err: Error | any) {
+    res.status(500).json({ message: "Internal Server Error" });
+    return;
+  }
 };
 
+//Create a new slot
 /**
  * @swagger
- * /slots:
+ * /api/slots:
  *   post:
  *     summary: Create a new slot
+ *     tags:
+ *       - Slots
  *     requestBody:
  *       required: true
  *       content:
@@ -97,37 +130,52 @@ const getSlot = async (req: Request, res: Response, next: NextFunction): Promise
  *             $ref: '#/components/schemas/Slots'
  *     responses:
  *       201:
- *         description: Slot created successfully
+ *         description: The created slot
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Slots'
  *       400:
  *         description: Bad request
+ *       500:
+ *         description: Server error
  */
-const createSlot = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const { slotNum, startTime, endTime } = req.body;
-        if (!slotNum || !startTime || !endTime) {
-            res.status(400).json({ message: "Bad request: Missing required fields" });
-            return;
-        }
-        const slot = new Slots({ slotNum, startTime, endTime });
-        const newSlot = await slot.save();
-        res.status(201).json({ message: "Slot created successfully", newSlot });
-    } catch (err) {
-        next(err);
+const createSlot = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { slotNum, startTime, endTime } = req.body;
+    if (!slotNum || !startTime || !endTime) {
+      res.status(400).json({ message: "Bad request: Missing required fields" });
+      return;
     }
+    const slot = new Slots({ slotNum, startTime, endTime });
+    const newSlot = await slot.save();
+    res.status(201).json({ message: "Slot created successfully", newSlot });
+  } catch (err: Error | any) {
+    res.status(500).json({ message: "Internal Server Error" });
+    return;
+  }
 };
 
+//Update an existing slot
 /**
  * @swagger
- * /slots/{slotId}:
+ * /api/slots/{id}:
  *   put:
- *     summary: Update a slot by ID
+ *     summary: Update an slot by ID
+ *     description: This endpoint allows the updating of an slot based on its ID. Returns the updated slot if successful.
+ *     tags:
+ *       - Slots
  *     parameters:
- *       - in: path
- *         name: slotId
+ *       - name: id
+ *         in: path
+ *         description: ID of the slot to update
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the slot to update
  *     requestBody:
  *       required: true
  *       content:
@@ -136,60 +184,120 @@ const createSlot = async (req: Request, res: Response, next: NextFunction): Prom
  *             $ref: '#/components/schemas/Slots'
  *     responses:
  *       200:
- *         description: Slot updated successfully
+ *         description: Slot after updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Slots'
  *       404:
  *         description: Slot not found
+ *       500:
+ *         description: Server error
  */
-const updateSlot = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const updatedSlot = await Slots.findByIdAndUpdate(req.params.slotId, req.body, { new: true });
-        if (!updatedSlot) {
-            res.status(404).json({ message: "Slot not found" });
-            return;
-        }
-        res.status(200).json({ message: "Slot updated successfully", updatedSlot });
-    } catch (err) {
-        next(err);
+const updateSlot = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const updatedSlot = await Slots.findByIdAndUpdate(
+      req.params.slotId,
+      req.body,
+      { new: true }
+    );
+    if (!updatedSlot) {
+      res.status(404).json({ message: "Slot not found" });
+      return;
     }
+    res.status(200).json({ message: "Slot updated successfully", updatedSlot });
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server Error" });
+    return;
+  }
 };
 
+//Delete an existing slot
 /**
  * @swagger
- * /slots/{slotId}:
+ * /api/slots/{id}:
  *   delete:
- *     summary: Delete a slot by ID
+ *     summary: Delete an slot by ID
+ *     description: This endpoint allows the deletion of an slot based on its ID. Returns the deleted slot if successful.
+ *     tags:
+ *       - Slots
  *     parameters:
- *       - in: path
- *         name: slotId
+ *       - name: id
+ *         in: path
+ *         description: ID of the slot to delete
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the slot to delete
  *     responses:
  *       200:
  *         description: Slot deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Bad request, invalid ID format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       404:
  *         description: Slot not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  */
-const deleteSlot = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const deletedSlot = await Slots.findByIdAndDelete(req.params.slotId);
-        if (!deletedSlot) {
-            res.status(404).json({ message: "Slot not found" });
-            return;
-        }
-        res.status(200).json({ message: "Slot deleted successfully" });
-    } catch (err) {
-        next(err);
+const deleteSlot = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const deletedSlot = await Slots.findByIdAndDelete(req.params.slotId);
+    if (!deletedSlot) {
+      res.status(404).json({ message: "Slot not found" });
+      return;
     }
+    res.status(200).json({ message: "Slot deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server Error" });
+    return;
+  }
 };
 
 const SlotsAPI = {
-    getAllSlots,
-    getSlot,
-    createSlot,
-    updateSlot,
-    deleteSlot
+  getAllSlots,
+  getSlot,
+  createSlot,
+  updateSlot,
+  deleteSlot,
 };
 
 export default SlotsAPI;

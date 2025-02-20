@@ -61,17 +61,19 @@ const getAllScoreband = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const scorebands = await Scoreband.find();
 
-    if (!scorebands) {
+    if (!scorebands || scorebands.length === 0) {
       res.status(404).json({ message: "No scorebands found" });
+      return;
     }
 
     res.status(200).json(scorebands);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -106,17 +108,19 @@ const getScoreband = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const scoreband = await Scoreband.findById(req.params.id);
 
     if (!scoreband) {
       res.status(404).json({ message: "Scoreband not found" });
+      return;
     }
 
     res.status(200).json(scoreband);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -150,7 +154,7 @@ const createScoreband = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     if (
       !req.body.roadmapId ||
@@ -160,6 +164,7 @@ const createScoreband = async (
       !req.body.skinExplanation
     ) {
       res.status(400).json({ message: "Bad request" });
+      return;
     }
 
     const scoreband = new Scoreband({
@@ -174,6 +179,7 @@ const createScoreband = async (
     res.status(200).json(newScoreband);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -237,12 +243,17 @@ const deleteScoreband = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    const scoreband = await Scoreband.findByIdAndDelete(req.params.id);
+    const deleteScoreband = await Scoreband.findByIdAndDelete(req.params.id);
+    if (!deleteScoreband) {
+      res.status(404).json({ message: "Scoreband not found" });
+      return;
+    }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
   }
 };
 
@@ -284,14 +295,21 @@ const deleteScoreband = async (
  */
 const updateScoreband = async (req: Request, res: Response) => {
   try {
-    const scoreband = await Scoreband.findByIdAndUpdate(
+    const updateScoreband = await Scoreband.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
-    res.status(200).json(scoreband);
+    if (!updateScoreband) {
+      res.status(404).json({ message: "Scoreband not found" });
+      return;
+    }
+    res
+      .status(200)
+      .json({ message: "Scoreband updated successfully", updateScoreband });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
   }
 };
 

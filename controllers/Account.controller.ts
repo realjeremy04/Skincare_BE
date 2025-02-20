@@ -67,17 +67,19 @@ const getAllAccounts = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const users = await Account.find();
 
-    if (!users) {
+    if (!users || users.length === 0) {
       res.status(404).json({ message: "No accounts found" });
+      return;
     }
 
     res.status(200).json(users);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -108,17 +110,23 @@ const getAllAccounts = async (
  *       500:
  *         description: Server error
  */
-const getAccount = async (req: Request, res: Response, next: NextFunction) => {
+const getAccount = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const user = await Account.findById(req.params.id);
 
     if (!user) {
       res.status(404).json({ message: "Account not found" });
+      return;
     }
 
     res.status(200).json(user);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -152,7 +160,7 @@ const createAccount = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     if (
       !req.body.username ||
@@ -161,6 +169,7 @@ const createAccount = async (
       !req.body.role
     ) {
       res.status(400).json({ message: "Bad request" });
+      return;
     }
 
     const user = new Account({
@@ -176,6 +185,7 @@ const createAccount = async (
     res.status(200).json(newUser);
   } catch (err: Error | any) {
     res.status(500).json({ message: "Internal Server Error" });
+    return;
   }
 };
 
@@ -241,10 +251,15 @@ const deleteAccount = async (
   next: NextFunction
 ) => {
   try {
-    const user = await Account.findByIdAndDelete(req.params.id);
+    const deletedUser = await Account.findByIdAndDelete(req.params.id);
+    if (!deletedUser) {
+      res.status(404).json({ message: "Account not found" });
+      return;
+    }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
   }
 };
 
@@ -284,14 +299,25 @@ const deleteAccount = async (
  *       500:
  *         description: Server error
  */
-const updateAccount = async (req: Request, res: Response) => {
+const updateAccount = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = await Account.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    res.status(200).json(user);
+    const updatedUser = await Account.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+      }
+    );
+    if (!updatedUser) {
+      res.status(404).json({ message: "Account not found" });
+      return;
+    }
+    res
+      .status(200)
+      .json({ message: "Account updated successfully", updatedUser });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
+    return;
   }
 };
 
