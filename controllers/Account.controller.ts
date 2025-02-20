@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Account from "$models/Account.model";
+import AppError from "$root/utils/AppError.util";
 
 /**
  * @swagger
@@ -30,10 +31,6 @@ import Account from "$models/Account.model";
  *           format: date
  *           nullable: true
  *           description: The date of birth of the account holder
- *         isActive:
- *           type: boolean
- *           default: true
- *           description: Whether the account is active or not
  *       required:
  *         - username
  *         - password
@@ -70,16 +67,12 @@ const getAllAccounts = async (
 ): Promise<void> => {
   try {
     const users = await Account.find();
-
-    if (!users || users.length === 0) {
-      res.status(404).json({ message: "No accounts found" });
-      return;
+    if (users.length === 0) {
+      return next(new AppError("No accounts found", 404));
     }
-
     res.status(200).json(users);
-  } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+  } catch (err: AppError | any) {
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -119,14 +112,12 @@ const getAccount = async (
     const user = await Account.findById(req.params.id);
 
     if (!user) {
-      res.status(404).json({ message: "Account not found" });
-      return;
+      return next(new AppError("Account not found", 404));
     }
 
     res.status(200).json(user);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -166,10 +157,9 @@ const createAccount = async (
       !req.body.username ||
       !req.body.password ||
       !req.body.email ||
-      !req.body.role
+      !req.body.dob
     ) {
-      res.status(400).json({ message: "Bad request" });
-      return;
+      return next(new AppError("Bad request", 400));
     }
 
     const user = new Account({
@@ -178,14 +168,13 @@ const createAccount = async (
       email: req.body.email,
       role: req.body.role,
       dob: req.body.dob,
-      isActive: req.body.isActive,
+      isActive: true,
     });
 
     const newUser = await user.save();
     res.status(200).json(newUser);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -217,15 +206,6 @@ const createAccount = async (
  *                   type: string
  *                 message:
  *                   type: string
- *       400:
- *         description: Bad request, invalid ID format
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
  *       404:
  *         description: Account not found
  *         content:
@@ -251,15 +231,14 @@ const deleteAccount = async (
   next: NextFunction
 ) => {
   try {
-    const deletedUser = await Account.findByIdAndDelete(req.params.id);
-    if (!deletedUser) {
-      res.status(404).json({ message: "Account not found" });
-      return;
+    const user = await Account.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return next(new AppError("Account not found", 404));
     }
-    res.status(200).json({ message: "Delete Successfully" });
+
+    res.status(200).json(user);
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -299,25 +278,20 @@ const deleteAccount = async (
  *       500:
  *         description: Server error
  */
-const updateAccount = async (req: Request, res: Response): Promise<void> => {
+const updateAccount = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const updatedUser = await Account.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-      }
-    );
-    if (!updatedUser) {
-      res.status(404).json({ message: "Account not found" });
-      return;
+    const user = await Account.findByIdAndUpdate(req.params.id, req.body);
+    if (!user) {
+      return next(new AppError("Account not found", 404));
     }
-    res
-      .status(200)
-      .json({ message: "Account updated successfully", updatedUser });
+
+    res.status(200).json(user);
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 

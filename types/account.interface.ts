@@ -1,8 +1,10 @@
+import { RoleEnum } from "$root/enums/RoleEnum";
+
 export interface IAccount {
   username: string;
   password: string;
   email: string;
-  role: string;
+  role: RoleEnum;
   dob: Date;
   isActive: boolean;
 }

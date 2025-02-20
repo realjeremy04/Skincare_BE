@@ -1,3 +1,5 @@
+import { errorHandler } from "./middleware/errorHandler.middleware";
+
 require("module-alias/register");
 require("dotenv").config();
 
@@ -8,6 +10,8 @@ const app = express();
 const connectMongo = require("$database/Mongo.database.ts");
 const routes = require("$routes/init.ts").default;
 
+connectMongo;
+
 app.use(express.json());
 app.use("/api", routes);
 app.use(
@@ -15,7 +19,6 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, { explorer: true })
 );
-connectMongo;
 
 app.listen(process.env.SERVER_PORT, (err: Error) => {
   if (err) {
@@ -25,3 +28,5 @@ app.listen(process.env.SERVER_PORT, (err: Error) => {
     console.log(`Server is running on port ${process.env.SERVER_PORT}`);
   }
 });
+
+app.use(errorHandler);
