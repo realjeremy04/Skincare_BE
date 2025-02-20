@@ -1,12 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import Service from "$models/Service.model";
 
-
 const getAllServices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const services = await Service.find();
 
-        if (!services) {
+        if (!services || services.length === 0) {
             res.status(404).json({ message: "No services found" });
             return;
         }
@@ -14,18 +13,17 @@ const getAllServices = async (req: Request, res: Response, next: NextFunction): 
         res.status(200).json(services);
     } catch (err: Error | any) {
         res.status(500).json({ message: "Internal Server Error" });
-        next(err);
+        return next(err);
     }
 };
 
-
-
-const getService = async (req: Request, res: Response, next: NextFunction) => {
+const getService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const service = await Service.findById(req.params.serviceId);
 
         if (!service) {
             res.status(404).json({ message: "Service not found" });
+            return;
         }
 
         res.status(200).json(service);
@@ -34,15 +32,11 @@ const getService = async (req: Request, res: Response, next: NextFunction) => {
     }
 };
 
-
-const createService = async (req: Request, res: Response, next: NextFunction) => {
+const createService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        if (
-            !req.body.serviceName ||
-            !req.body.description ||
-            !req.body.price
-        ) {
+        if (!req.body.serviceName || !req.body.description || !req.body.price) {
             res.status(400).json({ message: "Bad request" });
+            return;
         }
 
         const service = new Service({
@@ -54,37 +48,43 @@ const createService = async (req: Request, res: Response, next: NextFunction) =>
         });
 
         const newService = await service.save();
-        res.status(200).json(newService);
+        res.status(201).json({ message: "Create Successfully", newService });
     } catch (err: Error | any) {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
-
-const deleteService = async (req: Request, res: Response, next: NextFunction) => {
+const deleteService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const service = await Service.findByIdAndDelete(req.params.serviceId);
-        res.status(200).json(service);
+        if (!service) {
+            res.status(404).json({ message: "Service not found" });
+            return;
+        }
+        res.status(200).json({ message: "Delete Successfully", service });
     } catch (err: Error | any) {
         res.status(500).json({ message: err.message });
     }
 };
 
-
-const updateService = async (req: Request, res: Response) => {
+const updateService = async (req: Request, res: Response): Promise<void> => {
     try {
-        const service = await Service.findByIdAndUpdate(req.params.serviceId, req.body);
-        res.status(200).json(service);
+        const service = await Service.findByIdAndUpdate(req.params.serviceId, req.body, { new: true });
+        if (!service) {
+            res.status(404).json({ message: "Service not found" });
+            return;
+        }
+        res.status(200).json({ message: "Update Successfully", service });
     } catch (err: Error | any) {
         res.status(500).json({ message: err.message });
     }
 };
 
-const ServiceAPI = {
-    getAllServices,
-    getService,
-    createService,
-    deleteService,
-    updateService,
+const ServiceAPI = { 
+    getAllServices, 
+    getService, 
+    createService, 
+    deleteService, 
+    updateService 
 };
 export default ServiceAPI;
