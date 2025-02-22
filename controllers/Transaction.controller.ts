@@ -63,7 +63,7 @@ const getAllTransactions = async (
     const transactions = await Transaction.find().populate(
       "customerId appointmentId"
     );
-    if (transactions.length === 0) {
+    if (!transactions || transactions.length === 0) {
       return next(new AppError("No transactions found", 404));
     }
     res.status(200).json(transactions);
@@ -216,9 +216,8 @@ const updateTransaction = async (
       req.body,
       {
         new: true,
-        runValidators: true,
       }
-    ).populate("customerId appointmentId");
+    );
 
     if (!updatedTransaction) {
       return next(new AppError("Transaction not found", 404));

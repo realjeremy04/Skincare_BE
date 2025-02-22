@@ -75,7 +75,7 @@ const getAllTherapists = async (
     const therapists = await Therapist.find().populate(
       "accountId specialization"
     );
-    if (therapists.length === 0) {
+    if (!therapists || therapists.length === 0) {
       return next(new AppError("No therapists found", 404));
     }
     res.status(200).json(therapists);
@@ -228,9 +228,8 @@ const updateTherapist = async (
       req.body,
       {
         new: true,
-        runValidators: true,
       }
-    ).populate("accountId specialization");
+    );
 
     if (!updatedTherapist) {
       return next(new AppError("Therapist not found", 404));

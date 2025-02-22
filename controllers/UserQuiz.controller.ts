@@ -68,7 +68,7 @@ const getAllUserQuizzes = async (
 ): Promise<void> => {
   try {
     const userQuizzes = await UserQuiz.find();
-    if (userQuizzes.length === 0) {
+    if (!userQuizzes || userQuizzes.length === 0) {
       return next(new AppError("No user quizzes found", 404));
     }
     res.status(200).json(userQuizzes);
@@ -216,7 +216,6 @@ const updateUserQuiz = async (
       req.body,
       {
         new: true,
-        runValidators: true,
       }
     );
     if (!updatedUserQuiz) {
