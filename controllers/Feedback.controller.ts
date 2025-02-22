@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Feedback from "$models/Feeback.model";
+import AppError from "$root/utils/AppError.util";
 
 /**
  * @swagger
@@ -72,14 +73,12 @@ const getAllFeedback = async (
     const feedbacks = await Feedback.find();
 
     if (!feedbacks || feedbacks.length === 0) {
-      res.status(404).json({ message: "No feedbacks found" });
-      return;
+      return next(new AppError("No feedbacks found", 404));
     }
 
     res.status(200).json(feedbacks);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -119,14 +118,12 @@ const getFeedback = async (
     const feedback = await Feedback.findById(req.params.id);
 
     if (!feedback) {
-      res.status(404).json({ message: "Feedback not found" });
-      return;
+      return next(new AppError("Feedback not found", 404));
     }
 
     res.status(200).json(feedback);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -169,8 +166,7 @@ const createFeedback = async (
       !req.body.therapistId ||
       !req.body.rating
     ) {
-      res.status(400).json({ message: "Bad request" });
-      return;
+      return next(new AppError("Bad request", 400));
     }
 
     const feedback = new Feedback({
@@ -184,8 +180,7 @@ const createFeedback = async (
     const newFeedback = await feedback.save();
     res.status(200).json(newFeedback);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -253,13 +248,11 @@ const deleteFeedback = async (
   try {
     const deletedFeedback = await Feedback.findByIdAndDelete(req.params.id);
     if (!deletedFeedback) {
-      res.status(404).json({ message: "Feedback not found" });
-      return;
+      return next(new AppError("Feedback not found", 404));
     }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -299,7 +292,11 @@ const deleteFeedback = async (
  *       500:
  *         description: Server error
  */
-const updateFeedback = async (req: Request, res: Response): Promise<void> => {
+const updateFeedback = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const updatedFeedback = await Feedback.findByIdAndUpdate(
       req.params.id,
@@ -309,15 +306,13 @@ const updateFeedback = async (req: Request, res: Response): Promise<void> => {
       }
     );
     if (!updatedFeedback) {
-      res.status(404).json({ message: "Feedback not found" });
-      return;
+      return next(new AppError("Feedback not found", 404));
     }
     res
       .status(200)
       .json({ message: "Feedback updated successfully", updatedFeedback });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 

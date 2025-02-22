@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Appointment from "$models/Appointment.model";
+import AppError from "$root/utils/AppError.util";
 
 /**
  * @swagger
@@ -79,14 +80,12 @@ const getAllAppointment = async (
     const appointments = await Appointment.find();
 
     if (!appointments || appointments.length === 0) {
-      res.status(404).json({ message: "No appointments found" });
-      return;
+      return next(new AppError("No appointments found", 404));
     }
 
     res.status(200).json(appointments);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -126,14 +125,12 @@ const getAppointment = async (
     const appointment = await Appointment.findById(req.params.id);
 
     if (!appointment) {
-      res.status(404).json({ message: "Appointment not found" });
-      return;
+      return next(new AppError("Appointment not found", 404));
     }
 
     res.status(200).json(appointment);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -175,8 +172,7 @@ const createAppointment = async (
       !req.body.slotsId ||
       !req.body.serviceId
     ) {
-      res.status(400).json({ message: "Bad request" });
-      return;
+      return next(new AppError("Bad request", 400));
     }
 
     const appointment = new Appointment({
@@ -189,8 +185,7 @@ const createAppointment = async (
     const newAppointment = await appointment.save();
     res.status(200).json(newAppointment);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -260,13 +255,11 @@ const deleteAppointment = async (
       req.params.id
     );
     if (!deletedAppointment) {
-      res.status(404).json({ message: "Appointment not found" });
-      return;
+      return next(new AppError("Appointment not found", 404));
     }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -308,7 +301,8 @@ const deleteAppointment = async (
  */
 const updateAppointment = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const updatedAppointment = await Appointment.findByIdAndUpdate(
@@ -319,16 +313,14 @@ const updateAppointment = async (
       }
     );
     if (!updatedAppointment) {
-      res.status(404).json({ message: "Appointment not found" });
-      return;
+      return next(new AppError("Appointment not found", 404));
     }
     res.status(200).json({
       message: "Appointment updated successfully",
       updatedAppointment,
     });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -372,16 +364,12 @@ const getAppointmentsByCustomerId = async (
     });
 
     if (!appointments || appointments.length === 0) {
-      res
-        .status(404)
-        .json({ message: "No appointments found for this customer" });
-      return;
+      return next(new AppError("No appointments found for this customer", 404));
     }
 
     res.status(200).json(appointments);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 

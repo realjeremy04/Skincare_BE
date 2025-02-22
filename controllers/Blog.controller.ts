@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Blog from "$models/Blog.model";
+import AppError from "$root/utils/AppError.util";
 
 /**
  * @swagger
@@ -77,14 +78,12 @@ const getAllBlog = async (
     const blogs = await Blog.find();
 
     if (!blogs || blogs.length === 0) {
-      res.status(404).json({ message: "No blogs found" });
-      return;
+      return next(new AppError("No blogs found", 404));
     }
 
     res.status(200).json(blogs);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -124,14 +123,12 @@ const getBlog = async (
     const blog = await Blog.findById(req.params.id);
 
     if (!blog) {
-      res.status(404).json({ message: "Blog not found" });
-      return;
+      return next(new AppError("Blog not found", 404));
     }
 
     res.status(200).json(blog);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -173,8 +170,7 @@ const createBlog = async (
       !req.body.status ||
       !req.body.content
     ) {
-      res.status(400).json({ message: "Bad request" });
-      return;
+      return next(new AppError("Bad request", 400));
     }
 
     const blog = new Blog({
@@ -187,8 +183,7 @@ const createBlog = async (
     const newBlog = await blog.save();
     res.status(200).json(newBlog);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -256,13 +251,11 @@ const deleteBlog = async (
   try {
     const deletedBlog = await Blog.findByIdAndDelete(req.params.id);
     if (!deletedBlog) {
-      res.status(404).json({ message: "Blog not found" });
-      return;
+      return next(new AppError("Blog not found", 404));
     }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -302,19 +295,21 @@ const deleteBlog = async (
  *       500:
  *         description: Server error
  */
-const updateBlog = async (req: Request, res: Response): Promise<void> => {
+const updateBlog = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
     if (!updatedBlog) {
-      res.status(404).json({ message: "Blog not found" });
-      return;
+      return next(new AppError("Blog not found", 404));
     }
     res.status(200).json({ message: "Blog updated successfully", updatedBlog });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 

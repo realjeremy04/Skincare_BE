@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Scoreband from "$models/Scoreband.model";
+import AppError from "$root/utils/AppError.util";
 
 /**
  * @swagger
@@ -66,14 +67,12 @@ const getAllScoreband = async (
     const scorebands = await Scoreband.find();
 
     if (!scorebands || scorebands.length === 0) {
-      res.status(404).json({ message: "No scorebands found" });
-      return;
+      return next(new AppError("No scorebands found", 404));
     }
 
     res.status(200).json(scorebands);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -113,14 +112,12 @@ const getScoreband = async (
     const scoreband = await Scoreband.findById(req.params.id);
 
     if (!scoreband) {
-      res.status(404).json({ message: "Scoreband not found" });
-      return;
+      return next(new AppError("Scoreband not found", 404));
     }
 
     res.status(200).json(scoreband);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -163,8 +160,7 @@ const createScoreband = async (
       !req.body.typeOfSkin ||
       !req.body.skinExplanation
     ) {
-      res.status(400).json({ message: "Bad request" });
-      return;
+      return next(new AppError("Bad request", 400));
     }
 
     const scoreband = new Scoreband({
@@ -178,8 +174,7 @@ const createScoreband = async (
     const newScoreband = await scoreband.save();
     res.status(200).json(newScoreband);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -247,13 +242,11 @@ const deleteScoreband = async (
   try {
     const deleteScoreband = await Scoreband.findByIdAndDelete(req.params.id);
     if (!deleteScoreband) {
-      res.status(404).json({ message: "Scoreband not found" });
-      return;
+      return next(new AppError("Scoreband not found", 404));
     }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -293,7 +286,11 @@ const deleteScoreband = async (
  *       500:
  *         description: Server error
  */
-const updateScoreband = async (req: Request, res: Response) => {
+const updateScoreband = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const updateScoreband = await Scoreband.findByIdAndUpdate(
       req.params.id,
@@ -301,15 +298,13 @@ const updateScoreband = async (req: Request, res: Response) => {
       { new: true }
     );
     if (!updateScoreband) {
-      res.status(404).json({ message: "Scoreband not found" });
-      return;
+      return next(new AppError("Scoreband not found", 404));
     }
     res
       .status(200)
       .json({ message: "Scoreband updated successfully", updateScoreband });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 

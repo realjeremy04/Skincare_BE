@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Shifts from "$models/Shifts.model";
+import AppError from "$root/utils/AppError.util";
 
 /**
  * @swagger
@@ -66,13 +67,11 @@ const getAllShifts = async (
   try {
     const shifts = await Shifts.find();
     if (!shifts || shifts.length === 0) {
-      res.status(404).json({ message: "No shifts found" });
-      return;
+      return next(new AppError("No shifts found", 404));
     }
     res.status(200).json(shifts);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -111,13 +110,11 @@ const getShift = async (
   try {
     const shift = await Shifts.findById(req.params.shiftId);
     if (!shift) {
-      res.status(404).json({ message: "Shift not found" });
-      return;
+      return next(new AppError("Shift not found", 404));
     }
     res.status(200).json(shift);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -155,8 +152,7 @@ const createShift = async (
   try {
     const { slotsId, appointmentId, therapistId, date, isAvailable } = req.body;
     if (!slotsId || !appointmentId || !therapistId || !date) {
-      res.status(400).json({ message: "Bad request: Missing required fields" });
-      return;
+      return next(new AppError("Bad request: Missing required fields", 400));
     }
     const shift = new Shifts({
       slotsId,
@@ -168,8 +164,7 @@ const createShift = async (
     const newShift = await shift.save();
     res.status(201).json({ message: "Shift created successfully", newShift });
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -221,15 +216,13 @@ const updateShift = async (
       { new: true }
     );
     if (!updatedShift) {
-      res.status(404).json({ message: "Shift not found" });
-      return;
+      return next(new AppError("Shift not found", 404));
     }
     res
       .status(200)
       .json({ message: "Shift updated successfully", updatedShift });
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -297,13 +290,11 @@ const deleteShift = async (
   try {
     const deletedShift = await Shifts.findByIdAndDelete(req.params.shiftId);
     if (!deletedShift) {
-      res.status(404).json({ message: "Shift not found" });
-      return;
+      return next(new AppError("Shift not found", 404));
     }
     res.status(200).json({ message: "Shift deleted successfully" });
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
