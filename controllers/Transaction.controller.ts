@@ -33,10 +33,37 @@ import AppError from "$root/utils/AppError.util";
  */
 
 // Get all transactions
-const getAllTransactions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+/**
+ * @swagger
+ * /api/transaction:
+ *   get:
+ *     summary: Retrieve a list of all transactions
+ *     tags:
+ *       - Transaction
+ *     responses:
+ *       200:
+ *         description: A list of transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Transaction'
+ *       404:
+ *         description: No transaction found
+ *       500:
+ *         description: Server error
+ */
+const getAllTransactions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const transactions = await Transaction.find().populate("customerId appointmentId");
-    if (transactions.length === 0) {
+    const transactions = await Transaction.find().populate(
+      "customerId appointmentId"
+    );
+    if (!transactions || transactions.length === 0) {
       return next(new AppError("No transactions found", 404));
     }
     res.status(200).json(transactions);
@@ -46,9 +73,41 @@ const getAllTransactions = async (req: Request, res: Response, next: NextFunctio
 };
 
 // Get one transaction by ID
-const getTransaction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+/**
+ * @swagger
+ * /api/transaction/{id}:
+ *   get:
+ *     summary: Retrieve a single transaction by ID
+ *     tags:
+ *       - Transaction
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The transaction ID
+ *     responses:
+ *       200:
+ *         description: A single transaction
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Transaction'
+ *       404:
+ *         description: Transaction not found
+ *       500:
+ *         description: Server error
+ */
+const getTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const transaction = await Transaction.findById(req.params.id).populate("customerId appointmentId");
+    const transaction = await Transaction.findById(req.params.id).populate(
+      "customerId appointmentId"
+    );
     if (!transaction) {
       return next(new AppError("Transaction not found", 404));
     }
@@ -59,7 +118,36 @@ const getTransaction = async (req: Request, res: Response, next: NextFunction): 
 };
 
 // Create a new transaction
-const createTransaction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+/**
+ * @swagger
+ * /api/transaction:
+ *   post:
+ *     summary: Create a new transaction
+ *     tags:
+ *       - Transaction
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Transaction'
+ *     responses:
+ *       201:
+ *         description: The created transaction
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Transaction'
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Server error
+ */
+const createTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { customerId, appointmentId, paymentMethod, status } = req.body;
 
@@ -82,12 +170,54 @@ const createTransaction = async (req: Request, res: Response, next: NextFunction
 };
 
 // Update a transaction
-const updateTransaction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+/**
+ * @swagger
+ * /api/transaction/{id}:
+ *   put:
+ *     summary: Update an transaction by ID
+ *     description: This endpoint allows the updating of an transaction based on its ID. Returns the updated transaction if successful.
+ *     tags:
+ *       - Transaction
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the transaction to update
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Transaction'
+ *     responses:
+ *       200:
+ *         description: Transaction after updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Transaction'
+ *       404:
+ *         description: Transaction not found
+ *       500:
+ *         description: Server error
+ */
+const updateTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const updatedTransaction = await Transaction.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    }).populate("customerId appointmentId");
+    const updatedTransaction = await Transaction.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+      }
+    );
 
     if (!updatedTransaction) {
       return next(new AppError("Transaction not found", 404));
@@ -100,9 +230,70 @@ const updateTransaction = async (req: Request, res: Response, next: NextFunction
 };
 
 // Delete a transaction
-const deleteTransaction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+/**
+ * @swagger
+ * /api/transaction/{id}:
+ *   delete:
+ *     summary: Delete an transaction by ID
+ *     description: This endpoint allows the deletion of an transaction based on its ID. Returns the deleted transaction if successful.
+ *     tags:
+ *       - Transaction
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the transaction to delete
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Transaction deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Bad request, invalid ID format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Transaction not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+const deleteTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const deletedTransaction = await Transaction.findByIdAndDelete(req.params.id);
+    const deletedTransaction = await Transaction.findByIdAndDelete(
+      req.params.id
+    );
     if (!deletedTransaction) {
       return next(new AppError("Transaction not found", 404));
     }

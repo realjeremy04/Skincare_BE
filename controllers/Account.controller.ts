@@ -67,7 +67,7 @@ const getAllAccounts = async (
 ): Promise<void> => {
   try {
     const users = await Account.find();
-    if (users.length === 0) {
+    if (!users || users.length === 0) {
       return next(new AppError("No accounts found", 404));
     }
     res.status(200).json(users);

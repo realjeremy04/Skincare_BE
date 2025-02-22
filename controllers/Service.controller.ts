@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Service from "$models/Service.model";
+import AppError from "$root/utils/AppError.util";
 
 /**
  * @swagger
@@ -66,13 +67,12 @@ const getAllServices = async (
     const services = await Service.find();
 
     if (!services || services.length === 0) {
-      res.status(404).json({ message: "No services found" });
-      return;
+      return next(new AppError("No services found", 404));
     }
 
     res.status(200).json(services);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -112,13 +112,12 @@ const getService = async (
     const service = await Service.findById(req.params.serviceId);
 
     if (!service) {
-      res.status(404).json({ message: "Service not found" });
-      return;
+      return next(new AppError("Service not found", 404));
     }
 
     res.status(200).json(service);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -155,8 +154,7 @@ const createService = async (
 ): Promise<void> => {
   try {
     if (!req.body.serviceName || !req.body.description || !req.body.price) {
-      res.status(400).json({ message: "Bad request" });
-      return;
+      return next(new AppError("Bad request", 400));
     }
 
     const service = new Service({
@@ -170,7 +168,7 @@ const createService = async (
     const newService = await service.save();
     res.status(201).json({ message: "Create Successfully", newService });
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -238,12 +236,11 @@ const deleteService = async (
   try {
     const service = await Service.findByIdAndDelete(req.params.serviceId);
     if (!service) {
-      res.status(404).json({ message: "Service not found" });
-      return;
+      return next(new AppError("Service not found", 404));
     }
     res.status(200).json({ message: "Delete Successfully", service });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -283,7 +280,11 @@ const deleteService = async (
  *       500:
  *         description: Server error
  */
-const updateService = async (req: Request, res: Response): Promise<void> => {
+const updateService = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const service = await Service.findByIdAndUpdate(
       req.params.serviceId,
@@ -291,12 +292,11 @@ const updateService = async (req: Request, res: Response): Promise<void> => {
       { new: true }
     );
     if (!service) {
-      res.status(404).json({ message: "Service not found" });
-      return;
+      return next(new AppError("Service not found", 404));
     }
     res.status(200).json({ message: "Update Successfully", service });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Slots from "$models/Slots.model";
+import AppError from "$root/utils/AppError.util";
 
 /**
  * @swagger
@@ -59,13 +60,11 @@ const getAllSlots = async (
   try {
     const slots = await Slots.find();
     if (!slots || slots.length === 0) {
-      res.status(404).json({ message: "No slots found" });
-      return;
+      return next(new AppError("No slots found", 404));
     }
     res.status(200).json(slots);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -104,13 +103,11 @@ const getSlot = async (
   try {
     const slot = await Slots.findById(req.params.slotId);
     if (!slot) {
-      res.status(404).json({ message: "Slot not found" });
-      return;
+      return next(new AppError("Slot not found", 404));
     }
     res.status(200).json(slot);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -148,15 +145,13 @@ const createSlot = async (
   try {
     const { slotNum, startTime, endTime } = req.body;
     if (!slotNum || !startTime || !endTime) {
-      res.status(400).json({ message: "Bad request: Missing required fields" });
-      return;
+      return next(new AppError("Bad request: Missing required fields", 400));
     }
     const slot = new Slots({ slotNum, startTime, endTime });
     const newSlot = await slot.save();
     res.status(201).json({ message: "Slot created successfully", newSlot });
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -208,13 +203,11 @@ const updateSlot = async (
       { new: true }
     );
     if (!updatedSlot) {
-      res.status(404).json({ message: "Slot not found" });
-      return;
+      return next(new AppError("Slot not found", 404));
     }
     res.status(200).json({ message: "Slot updated successfully", updatedSlot });
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -282,13 +275,11 @@ const deleteSlot = async (
   try {
     const deletedSlot = await Slots.findByIdAndDelete(req.params.slotId);
     if (!deletedSlot) {
-      res.status(404).json({ message: "Slot not found" });
-      return;
+      return next(new AppError("Slot not found", 404));
     }
     res.status(200).json({ message: "Slot deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 

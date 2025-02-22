@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Question from "$models/Question.model";
+import AppError from "$root/utils/AppError.util";
 
 /**
  * @swagger
@@ -69,14 +70,12 @@ const getAllQuestion = async (
     const questions = await Question.find();
 
     if (!questions || questions.length === 0) {
-      res.status(404).json({ message: "No questions found" });
-      return;
+      return next(new AppError("No questions found", 404));
     }
 
     res.status(200).json(questions);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -116,14 +115,12 @@ const getQuestion = async (
     const question = await Question.findById(req.params.id);
 
     if (!question) {
-      res.status(404).json({ message: "Question not found" });
-      return;
+      return next(new AppError("Question not found", 404));
     }
 
     res.status(200).json(question);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -160,8 +157,7 @@ const createQuestion = async (
 ): Promise<void> => {
   try {
     if (!req.body.title || !req.body.answers) {
-      res.status(400).json({ message: "Bad request" });
-      return;
+      return next(new AppError("Bad request", 400));
     }
 
     const question = new Question({
@@ -172,8 +168,7 @@ const createQuestion = async (
     const newQuestion = await question.save();
     res.status(200).json(newQuestion);
   } catch (err: Error | any) {
-    res.status(500).json({ message: "Internal Server Error" });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -241,13 +236,11 @@ const deleteQuestion = async (
   try {
     const deleteQuestion = await Question.findByIdAndDelete(req.params.id);
     if (!deleteQuestion) {
-      res.status(404).json({ message: "Question not found" });
-      return;
+      return next(new AppError("Question not found", 404));
     }
     res.status(200).json({ message: "Delete Successfully" });
   } catch (err: Error | any) {
-    res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
@@ -287,7 +280,11 @@ const deleteQuestion = async (
  *       500:
  *         description: Server error
  */
-const updateQuestion = async (req: Request, res: Response): Promise<void> => {
+const updateQuestion = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const updatedQuestion = await Question.findByIdAndUpdate(
       req.params.id,
@@ -297,15 +294,14 @@ const updateQuestion = async (req: Request, res: Response): Promise<void> => {
       }
     );
     if (!updatedQuestion) {
-      res.status(404).json({ message: "Question not found" });
-      return;
+      return next(new AppError("Question not found", 404));
     }
     res
       .status(200)
       .json({ message: "Question updated successfully", updatedQuestion });
   } catch (err: Error | any) {
     res.status(500).json({ message: err.message });
-    return;
+    return next(new AppError("Internal Server Error", 500));
   }
 };
 
