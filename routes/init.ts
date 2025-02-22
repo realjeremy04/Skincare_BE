@@ -8,6 +8,9 @@ import shiftsRoutes from "./Shifts.route";
 import questionRoutes from "./Question.route";
 import scorebandRoutes from "./Scoreband.route";
 import slotsRoutes from "./Slots.route";
+import therapistRoutes from "./Therapist.route"
+import transactionRoutes from "./Transaction.route"
+import userQuizRoutes from "./UserQuiz.route"
 
 const router = Router();
 
@@ -20,5 +23,8 @@ router.use("/shifts", shiftsRoutes);
 router.use("/question", questionRoutes);
 router.use("/scoreband", scorebandRoutes);
 router.use("/slots", slotsRoutes);
+router.use("/therapist", therapistRoutes);
+router.use("/transaction", transactionRoutes);
+router.use("/userQuiz", userQuizRoutes);
 
 export default router;
