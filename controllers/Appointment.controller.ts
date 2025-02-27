@@ -77,7 +77,11 @@ const getAllAppointment = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const appointments = await Appointment.find();
+    const appointments = await Appointment.find()
+      .populate("therapistId")
+      .populate("customerId")
+      .populate("serviceId")
+      .populate("slotsId");
 
     if (!appointments || appointments.length === 0) {
       return next(new AppError("No appointments found", 404));
@@ -122,7 +126,11 @@ const getAppointment = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const appointment = await Appointment.findById(req.params.id);
+    const appointment = await Appointment.findById(req.params.id)
+      .populate("therapistId")
+      .populate("customerId")
+      .populate("serviceId")
+      .populate("slotsId");
 
     if (!appointment) {
       return next(new AppError("Appointment not found", 404));
@@ -170,7 +178,8 @@ const createAppointment = async (
       !req.body.therapistId ||
       !req.body.customerId ||
       !req.body.slotsId ||
-      !req.body.serviceId
+      !req.body.serviceId ||
+      !req.body.status
     ) {
       return next(new AppError("Bad request", 400));
     }
@@ -180,11 +189,17 @@ const createAppointment = async (
       customerId: req.body.customerId,
       slotsId: req.body.slotsId,
       serviceId: req.body.serviceId,
+      checkInImage: req.body.checkInImage,
+      checkoutImage: req.body.checkOutImage,
+      notes: req.body.notes,
+      amount: req.body.amount,
+      status: req.body.status,
     });
 
     const newAppointment = await appointment.save();
     res.status(200).json(newAppointment);
   } catch (err: Error | any) {
+    console.log(err);
     return next(new AppError("Internal Server Error", 500));
   }
 };
@@ -361,7 +376,11 @@ const getAppointmentsByCustomerId = async (
   try {
     const appointments = await Appointment.find({
       customerId: req.params.customerId,
-    });
+    })
+      .populate("therapistId")
+      .populate("customerId")
+      .populate("serviceId")
+      .populate("slotsId");
 
     if (!appointments || appointments.length === 0) {
       return next(new AppError("No appointments found for this customer", 404));

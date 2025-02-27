@@ -156,17 +156,22 @@ const createQuestion = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.body.title || !req.body.answers) {
-      return next(new AppError("Bad request", 400));
+    const { title, answers } = req.body;
+
+    if (!title || !Array.isArray(answers) || answers.length === 0) {
+      return next(new AppError("Bad request: Invalid question data", 400));
     }
 
-    const question = new Question({
-      title: req.body.title,
-      answers: req.body.answers,
-    });
+    for (const ans of answers) {
+      if (!ans.title || typeof ans.point !== "number") {
+        return next(new AppError("Bad request: Invalid answer format", 400));
+      }
+    }
+
+    const question = new Question({ title, answers });
 
     const newQuestion = await question.save();
-    res.status(200).json(newQuestion);
+    res.status(201).json(newQuestion);
   } catch (err: Error | any) {
     return next(new AppError("Internal Server Error", 500));
   }

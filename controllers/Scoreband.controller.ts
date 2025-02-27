@@ -64,7 +64,7 @@ const getAllScoreband = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const scorebands = await Scoreband.find();
+    const scorebands = await Scoreband.find().populate("roadmapId");
 
     if (!scorebands || scorebands.length === 0) {
       return next(new AppError("No scorebands found", 404));
@@ -109,7 +109,9 @@ const getScoreband = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const scoreband = await Scoreband.findById(req.params.id);
+    const scoreband = await Scoreband.findById(req.params.id).populate(
+      "roadmapId"
+    );
 
     if (!scoreband) {
       return next(new AppError("Scoreband not found", 404));

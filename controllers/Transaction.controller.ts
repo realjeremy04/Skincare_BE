@@ -60,9 +60,9 @@ const getAllTransactions = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const transactions = await Transaction.find().populate(
-      "customerId appointmentId"
-    );
+    const transactions = await Transaction.find()
+      .populate("customerId")
+      .populate("appointmentId");
     if (!transactions || transactions.length === 0) {
       return next(new AppError("No transactions found", 404));
     }
@@ -105,9 +105,9 @@ const getTransaction = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const transaction = await Transaction.findById(req.params.id).populate(
-      "customerId appointmentId"
-    );
+    const transaction = await Transaction.findById(req.params.id)
+      .populate("customerId")
+      .populate("appointmentId");
     if (!transaction) {
       return next(new AppError("Transaction not found", 404));
     }
