@@ -70,7 +70,11 @@ const getAllFeedback = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const feedbacks = await Feedback.find();
+    const feedbacks = await Feedback.find()
+      .populate("accountId")
+      .populate("appointmentId")
+      .populate("serviceId")
+      .populate("therapistId");
 
     if (!feedbacks || feedbacks.length === 0) {
       return next(new AppError("No feedbacks found", 404));
@@ -115,7 +119,11 @@ const getFeedback = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const feedback = await Feedback.findById(req.params.id);
+    const feedback = await Feedback.findById(req.params.id)
+      .populate("accountId")
+      .populate("appointmentId")
+      .populate("serviceId")
+      .populate("therapistId");
 
     if (!feedback) {
       return next(new AppError("Feedback not found", 404));
@@ -174,6 +182,8 @@ const createFeedback = async (
       appointmentId: req.body.appointmentId,
       serviceId: req.body.serviceId,
       therapistId: req.body.therapistId,
+      images: req.body.images,
+      comment: req.body.comment,
       rating: req.body.rating,
     });
 

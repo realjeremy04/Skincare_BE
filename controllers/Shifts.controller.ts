@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import Shifts from "$models/Shifts.model";
 import AppError from "$root/utils/AppError.util";
+import { populate } from "dotenv";
 
 /**
  * @swagger
@@ -65,7 +66,11 @@ const getAllShifts = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const shifts = await Shifts.find();
+    const shifts = await Shifts.find()
+      .populate("slotsId")
+      .populate("appointmentId")
+      .populate("therapistId");
+
     if (!shifts || shifts.length === 0) {
       return next(new AppError("No shifts found", 404));
     }
@@ -108,7 +113,10 @@ const getShift = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const shift = await Shifts.findById(req.params.shiftId);
+    const shift = await Shifts.findById(req.params.shiftId)
+      .populate("slotsId")
+      .populate("appointmentId")
+      .populate("therapistId");
     if (!shift) {
       return next(new AppError("Shift not found", 404));
     }

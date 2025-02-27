@@ -75,7 +75,7 @@ const getAllBlog = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const blogs = await Blog.find();
+    const blogs = await Blog.find().populate("staffId");
 
     if (!blogs || blogs.length === 0) {
       return next(new AppError("No blogs found", 404));
@@ -120,7 +120,7 @@ const getBlog = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const blog = await Blog.findById(req.params.id);
+    const blog = await Blog.findById(req.params.id).populate("staffId");
 
     if (!blog) {
       return next(new AppError("Blog not found", 404));
@@ -164,24 +164,30 @@ const createBlog = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (
-      !req.body.staffId ||
-      !req.body.title ||
-      !req.body.status ||
-      !req.body.content
-    ) {
+    const { staffId, title, status, content, imageId } = req.body;
+
+    if (!staffId || !title || !status || !content) {
       return next(new AppError("Bad request", 400));
     }
 
+    if (imageId && Array.isArray(imageId)) {
+      for (const img of imageId) {
+        if (!img.image || !img.imageDescription) {
+          return next(new AppError("Invalid image data", 400));
+        }
+      }
+    }
+
     const blog = new Blog({
-      staffId: req.body.staffId,
-      title: req.body.title,
-      status: req.body.status,
-      content: req.body.content,
+      staffId,
+      title,
+      status,
+      content,
+      imageId: imageId || [],
     });
 
     const newBlog = await blog.save();
-    res.status(200).json(newBlog);
+    res.status(201).json(newBlog);
   } catch (err: Error | any) {
     return next(new AppError("Internal Server Error", 500));
   }

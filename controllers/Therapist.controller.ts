@@ -72,9 +72,9 @@ const getAllTherapists = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const therapists = await Therapist.find().populate(
-      "accountId specialization"
-    );
+    const therapists = await Therapist.find()
+      .populate("accountId")
+      .populate("specialization");
     if (!therapists || therapists.length === 0) {
       return next(new AppError("No therapists found", 404));
     }
@@ -117,9 +117,9 @@ const getTherapist = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const therapist = await Therapist.findById(req.params.id).populate(
-      "accountId specialization"
-    );
+    const therapist = await Therapist.findById(req.params.id)
+      .populate("accountId")
+      .populate("specialization");
     if (!therapist) {
       return next(new AppError("Therapist not found", 404));
     }
@@ -165,6 +165,22 @@ const createTherapist = async (
 
     if (!accountId || !specialization || !certification || !experience) {
       return next(new AppError("All fields are required", 400));
+    }
+
+    if (!Array.isArray(specialization) || specialization.length === 0) {
+      return next(
+        new AppError("Specialization must be a non-empty array", 400)
+      );
+    }
+
+    if (!Array.isArray(certification) || certification.length === 0) {
+      return next(new AppError("Certification must be a non-empty array", 400));
+    }
+
+    for (const cert of certification) {
+      if (!cert.name || !cert.issuedBy || !cert.issuedDate) {
+        return next(new AppError("Invalid certification data", 400));
+      }
     }
 
     const newTherapist = new Therapist({

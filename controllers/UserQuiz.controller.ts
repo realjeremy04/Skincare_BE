@@ -67,7 +67,9 @@ const getAllUserQuizzes = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userQuizzes = await UserQuiz.find();
+    const userQuizzes = await UserQuiz.find()
+      .populate("accountId")
+      .populate("scoreBandId");
     if (!userQuizzes || userQuizzes.length === 0) {
       return next(new AppError("No user quizzes found", 404));
     }
@@ -110,7 +112,9 @@ const getUserQuiz = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userQuiz = await UserQuiz.findById(req.params.id);
+    const userQuiz = await UserQuiz.findById(req.params.id)
+      .populate("accountId")
+      .populate("scoreBandId");
     if (!userQuiz) {
       return next(new AppError("User quiz not found", 404));
     }
@@ -146,6 +150,8 @@ const getUserQuiz = async (
  *       500:
  *         description: Server error
  */
+import mongoose from "mongoose";
+
 const createUserQuiz = async (
   req: Request,
   res: Response,
@@ -153,15 +159,32 @@ const createUserQuiz = async (
 ): Promise<void> => {
   try {
     const { accountId, scoreBandId, result, totalPoint } = req.body;
+
     if (!accountId || !scoreBandId || !result || totalPoint === undefined) {
       return next(new AppError("All fields are required", 400));
     }
+
+    if (!Array.isArray(result) || result.length === 0) {
+      return next(new AppError("Result must be a non-empty array", 400));
+    }
+
+    for (const item of result) {
+      if (!item.title || !item.answer || typeof item.point !== "number") {
+        return next(new AppError("Invalid result data", 400));
+      }
+    }
+
+    if (typeof totalPoint !== "number") {
+      return next(new AppError("TotalPoint must be a number", 400));
+    }
+
     const newUserQuiz = new UserQuiz({
       accountId,
       scoreBandId,
       result,
       totalPoint,
     });
+
     await newUserQuiz.save();
     res.status(201).json(newUserQuiz);
   } catch (err: any) {
