@@ -7,6 +7,10 @@ const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
+interface AuthenticatedRequest extends Request {
+  user?: { _id: string; role: string };
+}
+
 /**
  * @swagger
  * components:
@@ -109,23 +113,37 @@ const getAllAccounts = async (
  *         description: Server error
  */
 const getAccount = async (
-  req: Request,
+  req: AuthenticatedRequest & { params: { id: string } }, // Combine types
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  try {
-    const user = await Account.findById(req.params.id);
+  if (!req.user) {
+    return next(new AppError("Authentication required", 401));
+  }
+  if (req.user.role !== RoleEnum.Admin) {
+    return next(new AppError("Unauthorized: Admin access required", 403));
+  }
 
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError("Account ID is required", 400));
+    }
+
+    const user = await Account.findById(id);
     if (!user) {
       return next(new AppError("Account not found", 404));
     }
 
-    res.status(200).json(user);
-  } catch (err: Error | any) {
+    res.status(200).json({
+      message: "Account retrieved successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Get account error:", error instanceof Error ? error.stack : error);
     return next(new AppError("Internal Server Error", 500));
   }
 };
-
 // Create one account
 /**
  * @swagger
@@ -231,18 +249,34 @@ const createAccount = async (
  *                   type: string
  */
 const deleteAccount = async (
-  req: Request,
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
+  if (!req.user) {
+    return next(new AppError("Authentication required", 401));
+  }
+  if (req.user.role !== RoleEnum.Admin) {
+    return next(new AppError("Unauthorized: Admin access required", 403));
+  }
+
   try {
-    const user = await Account.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError("Account ID is required", 400));
+    }
+
+    const user = await Account.findByIdAndDelete(id);
     if (!user) {
       return next(new AppError("Account not found", 404));
     }
 
-    res.status(200).json(user);
-  } catch (err: Error | any) {
+    res.status(200).json({
+      message: "Account deleted successfully",
+      _id: user._id,
+    });
+  } catch (error) {
+    console.error("Delete account error:", error instanceof Error ? error.stack : error);
     return next(new AppError("Internal Server Error", 500));
   }
 };
@@ -283,26 +317,58 @@ const deleteAccount = async (
  *       500:
  *         description: Server error
  */
+interface UpdateAccountBody {
+  username?: string;
+  email?: string;
+  role?: string;
+  dob?: string;
+}
+
 const updateAccount = async (
-  req: Request,
+  req: AuthenticatedRequest & { params: { id: string }; body: UpdateAccountBody },
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
+  if (!req.user) {
+    return next(new AppError("Authentication required", 401));
+  }
+  if (req.user.role !== RoleEnum.Admin) {
+    return next(new AppError("Unauthorized: Admin access required", 403));
+  }
+
   try {
-    const user = await Account.findByIdAndUpdate(req.params.id, req.body);
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError("Account ID is required", 400));
+    }
+
+    const updates = req.body;
+    if (Object.keys(updates).length === 0) {
+      return next(new AppError("No update data provided", 400));
+    }
+
+    const user = await Account.findByIdAndUpdate(
+      id,
+      updates,
+      { new: true, runValidators: true } 
+    );
     if (!user) {
       return next(new AppError("Account not found", 404));
     }
 
-    res.status(200).json(user);
-  } catch (err: Error | any) {
+    res.status(200).json({
+      message: "Account updated successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Update account error:", error instanceof Error ? error.stack : error);
     return next(new AppError("Internal Server Error", 500));
   }
 };
 
 
 
-const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const register = async (req: Request, res: Response, next: NextFunction) => {
   const { username, email, password, dob } = req.body;
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
@@ -365,7 +431,7 @@ const register = async (req: Request, res: Response, next: NextFunction): Promis
       email,
       password: hashedPassword,
       role: RoleEnum.Customer,
-      dob: dobDate, // Use the validated Date object
+      dob: dobDate, 
       isActive: true,
     });
 
@@ -383,7 +449,7 @@ const register = async (req: Request, res: Response, next: NextFunction): Promis
 
 
 
-const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const login = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body as { email?: string; password?: string };
   const errors: { msg: string }[] = [];
 
@@ -448,6 +514,50 @@ const logout = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+const changePassword = async (
+  req: Request & { user?: { _id: string } }, 
+  res: Response, 
+  next: NextFunction
+) => {
+    if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
+    try {
+        const user = await Account.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ error: "Both current and new passwords are required" });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: "Current password incorrect" });
+        }
+
+        // Check if newPassword is the same as currentPassword
+        if (currentPassword === newPassword) {
+            return res.status(400).json({ error: "New password must be different from the current password" });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ error: "New password must be at least 6 characters" });
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+        console.log("Password changed for:", user.email);
+        res.status(200).json({ message: "Password changed successfully" });
+    } catch (error) {
+        console.error("Password change error:", error instanceof Error ? error.stack : error);
+        res.status(400).json({ error: "Password change failed" });
+    }
+};
+
 
 const AccountAPI = {
   getAccount,
@@ -457,6 +567,7 @@ const AccountAPI = {
   updateAccount,
   login,
   logout,
-  register
+  register, 
+  changePassword
 };
 export default AccountAPI;
