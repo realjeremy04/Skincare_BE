@@ -5,6 +5,7 @@ const router = Router();
 
 //Authentications routes
 router.post("/login", AccountAPI.login);
+router.post("/register", AccountAPI.register);
 router.get("/logout", AccountAPI.logout);
 
 router.get("/", AccountAPI.getAllAccounts);
