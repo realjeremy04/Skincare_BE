@@ -1,3 +1,4 @@
+import { RoleEnum } from "$root/enums/RoleEnum";
 import { Request, Response, NextFunction } from "express";
 import * as jwt from "jsonwebtoken";
 
@@ -7,10 +8,7 @@ const JWT_SECRET: string = process.env.JWT_SECRET || "your-secret-key";
 // Define the shape of the decoded JWT payload
 interface JwtPayload {
   _id: string;
-  role: string;
-  isAdmin?: boolean; // Optional, depending on your JWT structure
-  iat?: number; // Issued at (optional, added by jwt.sign)
-  exp?: number; // Expires at (optional, added by jwt.sign)
+  role: RoleEnum;
 }
 
 // Extend Express Request type to include user property
@@ -51,7 +49,7 @@ const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
     return;
   }
 
-  if (!req.user.isAdmin) {
+  if (req.user.role !== RoleEnum.Admin) {
     res.status(403).json({ error: "Admin access required" });
     return;
   }
