@@ -70,10 +70,17 @@ interface AuthenticatedRequest extends Request {
  *         description: Server error
  */
 const getAllAccounts = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+
+  if (!req.user) {
+    return next(new AppError("Authentication required", 401));
+  }
+  if (req.user.role !== RoleEnum.Admin) {
+    return next(new AppError("Unauthorized: Admin access required", 403));
+  }
   try {
     const users = await Account.find();
     if (!users || users.length === 0) {
@@ -120,10 +127,6 @@ const getAccount = async (
   if (!req.user) {
     return next(new AppError("Authentication required", 401));
   }
-  if (req.user.role !== RoleEnum.Admin) {
-    return next(new AppError("Unauthorized: Admin access required", 403));
-  }
-
   try {
     const { id } = req.params;
     if (!id) {
@@ -332,9 +335,6 @@ const updateAccount = async (
   if (!req.user) {
     return next(new AppError("Authentication required", 401));
   }
-  if (req.user.role !== RoleEnum.Admin) {
-    return next(new AppError("Unauthorized: Admin access required", 403));
-  }
 
   try {
     const { id } = req.params;
@@ -518,34 +518,34 @@ const changePassword = async (
   req: Request & { user?: { _id: string } }, 
   res: Response, 
   next: NextFunction
-) => {
+): Promise<void> => {
     if (!req.user) {
-        return res.status(401).json({ error: "Authentication required" });
+        return next(new AppError("Authentication required", 401));
     }
 
     const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
     try {
         const user = await Account.findById(req.user._id);
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return next(new AppError("User not found", 404));
         }
 
         if (!currentPassword || !newPassword) {
-            return res.status(400).json({ error: "Both current and new passwords are required" });
+            return next(new AppError("Current password and new password are required", 400));
         }
 
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
-            return res.status(400).json({ error: "Current password incorrect" });
+            return next(new AppError("Invalid current password", 400));
         }
 
         // Check if newPassword is the same as currentPassword
         if (currentPassword === newPassword) {
-            return res.status(400).json({ error: "New password must be different from the current password" });
+            return next(new AppError("New password must be different from current password", 400));
         }
 
         if (newPassword.length < 6) {
-            return res.status(400).json({ error: "New password must be at least 6 characters" });
+            return next(new AppError("New password must be at least 6 characters", 400));
         }
 
         user.password = await bcrypt.hash(newPassword, 10);
