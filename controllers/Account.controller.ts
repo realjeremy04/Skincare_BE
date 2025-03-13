@@ -14,6 +14,11 @@ interface AuthenticatedRequest extends Request {
 /**
  * @swagger
  * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  *   schemas:
  *     Account:
  *       type: object
@@ -28,26 +33,42 @@ interface AuthenticatedRequest extends Request {
  *         password:
  *           type: string
  *           description: The password of the account (hashed in database)
+ *           writeOnly: true
  *         email:
  *           type: string
  *           format: email
  *           description: The email address of the account
  *         role:
  *           type: string
- *           description: The role of the user (e.g., admin, user, etc.)
+ *           enum: [Admin, Customer]
+ *           description: The role of the user
  *         dob:
  *           type: string
  *           format: date
  *           nullable: true
- *           description: The date of birth of the account holder
+ *           description: The date of birth of the account holder (YYYY-MM-DD)
+ *         isActive:
+ *           type: boolean
+ *           description: Account activation status
  *       required:
  *         - username
  *         - password
  *         - email
  *         - role
+ *     Error:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *         errors:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               msg:
+ *                 type: string
  */
 
-// Get all accounts
 /**
  * @swagger
  * /api/account:
@@ -55,6 +76,8 @@ interface AuthenticatedRequest extends Request {
  *     summary: Retrieve a list of all accounts
  *     tags:
  *       - Accounts
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: A list of accounts
@@ -64,17 +87,36 @@ interface AuthenticatedRequest extends Request {
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Account'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Admin access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: No accounts found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 const getAllAccounts = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-
   if (!req.user) {
     return next(new AppError("Authentication required", 401));
   }
@@ -92,7 +134,6 @@ const getAllAccounts = async (
   }
 };
 
-// Get one account
 /**
  * @swagger
  * /api/account/{id}:
@@ -100,6 +141,8 @@ const getAllAccounts = async (
  *     summary: Retrieve a single account by ID
  *     tags:
  *       - Accounts
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -109,18 +152,43 @@ const getAllAccounts = async (
  *         description: The account ID
  *     responses:
  *       200:
- *         description: A single account
+ *         description: Account retrieved successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Account'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/Account'
+ *       400:
+ *         description: Invalid ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Account not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 const getAccount = async (
-  req: AuthenticatedRequest & { params: { id: string } }, // Combine types
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -147,7 +215,7 @@ const getAccount = async (
     return next(new AppError("Internal Server Error", 500));
   }
 };
-// Create one account
+
 /**
  * @swagger
  * /api/account:
@@ -160,18 +228,45 @@ const getAccount = async (
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Account'
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               role:
+ *                 type: string
+ *                 enum: [Admin, Customer]
+ *               dob:
+ *                 type: string
+ *                 format: date
+ *             required:
+ *               - username
+ *               - password
+ *               - email
+ *               - dob
  *     responses:
- *       201:
- *         description: The created account
+ *       200:
+ *         description: Account created successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Account'
  *       400:
  *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 const createAccount = async (
   req: Request,
@@ -204,22 +299,22 @@ const createAccount = async (
   }
 };
 
-// Delete one account
 /**
  * @swagger
  * /api/account/{id}:
  *   delete:
  *     summary: Delete an account by ID
- *     description: This endpoint allows the deletion of an account based on its ID. Returns the deleted account if successful.
  *     tags:
  *       - Accounts
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - name: id
- *         in: path
- *         description: ID of the account to delete
+ *       - in: path
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *         description: The account ID
  *     responses:
  *       200:
  *         description: Account deleted successfully
@@ -228,28 +323,40 @@ const createAccount = async (
  *             schema:
  *               type: object
  *               properties:
- *                 _id:
- *                   type: string
  *                 message:
  *                   type: string
+ *                 _id:
+ *                   type: string
+ *       400:
+ *         description: Invalid ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Admin access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Account not found
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
+ *               $ref: '#/components/schemas/Error'
  *       500:
- *         description: Internal server error
+ *         description: Server error
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
+ *               $ref: '#/components/schemas/Error'
  */
 const deleteAccount = async (
   req: AuthenticatedRequest & { params: { id: string } },
@@ -284,41 +391,76 @@ const deleteAccount = async (
   }
 };
 
-// Update one account
 /**
  * @swagger
  * /api/account/{id}:
  *   put:
  *     summary: Update an account by ID
- *     description: This endpoint allows the updating of an account based on its ID. Returns the updated account if successful.
  *     tags:
  *       - Accounts
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - name: id
- *         in: path
- *         description: ID of the account to update
+ *       - in: path
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *         description: The account ID
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Account'
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               role:
+ *                 type: string
+ *                 enum: [Admin, Customer]
+ *               dob:
+ *                 type: string
+ *                 format: date
  *     responses:
  *       200:
- *         description: Account after updated
+ *         description: Account updated successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Account'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/Account'
+ *       400:
+ *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Account not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 interface UpdateAccountBody {
   username?: string;
@@ -350,7 +492,7 @@ const updateAccount = async (
     const user = await Account.findByIdAndUpdate(
       id,
       updates,
-      { new: true, runValidators: true } 
+      { new: true, runValidators: true }
     );
     if (!user) {
       return next(new AppError("Account not found", 404));
@@ -366,15 +508,64 @@ const updateAccount = async (
   }
 };
 
-
-
+/**
+ * @swagger
+ * /api/account/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *               dob:
+ *                 type: string
+ *                 format: date
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *               - dob
+ *     responses:
+ *       201:
+ *         description: Registration successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 const register = async (req: Request, res: Response, next: NextFunction) => {
   const { username, email, password, dob } = req.body;
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const errors: { msg: string }[] = [];
 
-  // Input validation
   if (!username || !email || !password || !dob) {
     errors.push({ msg: "Please enter all required fields (username, email, password, date of birth)" });
   }
@@ -386,7 +577,6 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
     return;
   }
 
-  // Convert and validate dob
   const dobDate = new Date(dob);
   if (isNaN(dobDate.getTime())) {
     errors.push({ msg: "Invalid date of birth format. Use YYYY-MM-DD." });
@@ -407,7 +597,6 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    // Check for existing email or username
     const existingEmail = await Account.findOne({ email });
     if (existingEmail) {
       errors.push({ msg: "Email already exists" });
@@ -422,16 +611,13 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
       return;
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user with dob as Date object
     const newUser = new Account({
       username,
       email,
       password: hashedPassword,
       role: RoleEnum.Customer,
-      dob: dobDate, 
+      dob: dobDate,
       isActive: true,
     });
 
@@ -447,8 +633,59 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-
-
+/**
+ * @swagger
+ * /api/account/login:
+ *   post:
+ *     summary: Login a user
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *             required:
+ *               - email
+ *               - password
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/Account'
+ *       400:
+ *         description: Missing fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 const login = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body as { email?: string; password?: string };
   const errors: { msg: string }[] = [];
@@ -497,6 +734,30 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/account/logout:
+ *   post:
+ *     summary: Logout a user
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 const logout = (req: Request, res: Response, next: NextFunction) => {
   try {
     res.clearCookie("jwt", {
@@ -514,50 +775,106 @@ const logout = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/account/change-password:
+ *   post:
+ *     summary: Change user password
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 const changePassword = async (
-  req: Request & { user?: { _id: string } }, 
-  res: Response, 
+  req: Request & { user?: { _id: string } },
+  res: Response,
   next: NextFunction
 ): Promise<void> => {
-    if (!req.user) {
-        return next(new AppError("Authentication required", 401));
+  if (!req.user) {
+    return next(new AppError("Authentication required", 401));
+  }
+
+  const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
+  try {
+    const user = await Account.findById(req.user._id);
+    if (!user) {
+      return next(new AppError("User not found", 404));
     }
 
-    const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
-    try {
-        const user = await Account.findById(req.user._id);
-        if (!user) {
-            return next(new AppError("User not found", 404));
-        }
-
-        if (!currentPassword || !newPassword) {
-            return next(new AppError("Current password and new password are required", 400));
-        }
-
-        const isMatch = await bcrypt.compare(currentPassword, user.password);
-        if (!isMatch) {
-            return next(new AppError("Invalid current password", 400));
-        }
-
-        // Check if newPassword is the same as currentPassword
-        if (currentPassword === newPassword) {
-            return next(new AppError("New password must be different from current password", 400));
-        }
-
-        if (newPassword.length < 6) {
-            return next(new AppError("New password must be at least 6 characters", 400));
-        }
-
-        user.password = await bcrypt.hash(newPassword, 10);
-        await user.save();
-        console.log("Password changed for:", user.email);
-        res.status(200).json({ message: "Password changed successfully" });
-    } catch (error) {
-        console.error("Password change error:", error instanceof Error ? error.stack : error);
-        res.status(400).json({ error: "Password change failed" });
+    if (!currentPassword || !newPassword) {
+      return next(new AppError("Current password and new password are required", 400));
     }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return next(new AppError("Invalid current password", 400));
+    }
+
+    if (currentPassword === newPassword) {
+      return next(new AppError("New password must be different from current password", 400));
+    }
+
+    if (newPassword.length < 6) {
+      return next(new AppError("New password must be at least 6 characters", 400));
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    console.log("Password changed for:", user.email);
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Password change error:", error instanceof Error ? error.stack : error);
+    return next(new AppError("Password change failed", 500));
+  }
 };
-
 
 const AccountAPI = {
   getAccount,
@@ -567,7 +884,8 @@ const AccountAPI = {
   updateAccount,
   login,
   logout,
-  register, 
+  register,
   changePassword
 };
+
 export default AccountAPI;
