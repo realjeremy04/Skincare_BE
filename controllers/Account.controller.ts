@@ -1,6 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import Account from "$models/Account.model";
 import AppError from "$root/utils/AppError.util";
+import { RoleEnum } from "$root/enums/RoleEnum";
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 /**
  * @swagger
@@ -295,11 +300,163 @@ const updateAccount = async (
   }
 };
 
+
+
+const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { username, email, password, dob } = req.body;
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const errors: { msg: string }[] = [];
+
+  // Input validation
+  if (!username || !email || !password || !dob) {
+    errors.push({ msg: "Please enter all required fields (username, email, password, date of birth)" });
+  }
+  if (password && password.length < 6) {
+    errors.push({ msg: "Password must be at least 6 characters" });
+  }
+  if (errors.length > 0) {
+    res.status(400).json({ errors });
+    return;
+  }
+
+  // Convert and validate dob
+  const dobDate = new Date(dob);
+  if (isNaN(dobDate.getTime())) {
+    errors.push({ msg: "Invalid date of birth format. Use YYYY-MM-DD." });
+    res.status(400).json({ errors });
+    return;
+  }
+
+  const dobYear = dobDate.getFullYear();
+  if (dobYear > currentYear) {
+    errors.push({ msg: "Date of Birth cannot be in the future" });
+    res.status(400).json({ errors });
+    return;
+  }
+  if (dobYear < currentYear - 120) {
+    errors.push({ msg: "Date of Birth cannot be more than 120 years in the past" });
+    res.status(400).json({ errors });
+    return;
+  }
+
+  try {
+    // Check for existing email or username
+    const existingEmail = await Account.findOne({ email });
+    if (existingEmail) {
+      errors.push({ msg: "Email already exists" });
+      res.status(400).json({ errors });
+      return;
+    }
+
+    const existingUsername = await Account.findOne({ username });
+    if (existingUsername) {
+      errors.push({ msg: "Username already exists" });
+      res.status(400).json({ errors });
+      return;
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user with dob as Date object
+    const newUser = new Account({
+      username,
+      email,
+      password: hashedPassword,
+      role: RoleEnum.Customer,
+      dob: dobDate, // Use the validated Date object
+      isActive: true,
+    });
+
+    await newUser.save();
+    console.log("User registered successfully:", newUser);
+
+    res.status(201).json({
+      message: "Registration successful, please log in",
+    });
+  } catch (error) {
+    console.error("Registration error:", error instanceof Error ? error.stack : error);
+    res.status(500).json({ errors: [{ msg: "Server error occurred. Please try again." }] });
+  }
+};
+
+
+
+const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { email, password } = req.body as { email?: string; password?: string };
+  const errors: { msg: string }[] = [];
+
+  if (!email || !password) {
+    errors.push({ msg: "Email and password are required" });
+    res.status(400).json({ errors });
+    return;
+  }
+
+  try {
+    const user = await Account.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      errors.push({ msg: "Invalid credentials" });
+      res.status(401).json({ errors });
+      return;
+    }
+
+    const token = jwt.sign(
+      { _id: user._id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    console.log("User logged in:", user.email);
+    res.status(200).json({
+      message: "Login successful",
+      user: {
+        username: user.username,
+        email: user.email,
+        dob: user.dob,
+        role: user.role,
+        isActive: user.isActive,
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error instanceof Error ? error.stack : error);
+    res.status(500).json({ errors: [{ msg: "Server error occurred. Please try again." }] });
+  }
+};
+
+const logout = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+    });
+
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Logout error:", error instanceof Error ? error.stack : error);
+    res.status(500).json({
+      errors: [{ msg: "Error during logout process" }]
+    });
+  }
+};
+
+
 const AccountAPI = {
   getAccount,
   getAllAccounts,
   createAccount,
   deleteAccount,
   updateAccount,
+  login,
+  logout,
+  register
 };
 export default AccountAPI;
