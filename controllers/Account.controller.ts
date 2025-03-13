@@ -1,6 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import Account from "$models/Account.model";
 import AppError from "$root/utils/AppError.util";
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 /**
  * @swagger
@@ -295,11 +299,78 @@ const updateAccount = async (
   }
 };
 
+const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { email, password } = req.body as { email?: string; password?: string };
+  const errors: { msg: string }[] = [];
+
+  if (!email || !password) {
+    errors.push({ msg: "Email and password are required" });
+    res.status(400).json({ errors });
+    return;
+  }
+
+  try {
+    const user = await Account.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      errors.push({ msg: "Invalid credentials" });
+      res.status(401).json({ errors });
+      return;
+    }
+
+    const token = jwt.sign(
+      { _id: user._id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    console.log("User logged in:", user.email);
+    res.status(200).json({
+      message: "Login successful",
+      user: {
+        username: user.username,
+        email: user.email,
+        dob: user.dob,
+        role: user.role,
+        isActive: user.isActive,
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error instanceof Error ? error.stack : error);
+    res.status(500).json({ errors: [{ msg: "Server error occurred. Please try again." }] });
+  }
+};
+
+const logout = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+    });
+
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Logout error:", error instanceof Error ? error.stack : error);
+    res.status(500).json({
+      errors: [{ msg: "Error during logout process" }]
+    });
+  }
+};
+
 const AccountAPI = {
   getAccount,
   getAllAccounts,
   createAccount,
   deleteAccount,
   updateAccount,
+  login,
+  logout
 };
 export default AccountAPI;
