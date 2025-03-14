@@ -57,5 +57,19 @@ const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   next();
 };
 
+const isStaff = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (!req.user) {
+    res.status(500).json({ error: "Authentication middleware must run before isStaff" });
+    return;
+  }
+
+  if (req.user.role !== RoleEnum.Staff) {
+    res.status(403).json({ error: "Staff access required" });
+    return;
+  }
+
+  next();
+};
+
 // Export as ES6 module
-export { auth, isAdmin };
+export { auth, isAdmin, isStaff };

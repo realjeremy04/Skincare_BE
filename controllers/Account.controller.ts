@@ -205,6 +205,9 @@ const getAccount = async (
     if (!user) {
       return next(new AppError("Account not found", 404));
     }
+    else if(!user.isActive){
+      return next(new AppError("Account is deactivated", 404));
+    }
 
     res.status(200).json({
       message: "Account retrieved successfully",
@@ -726,6 +729,7 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
         dob: user.dob,
         role: user.role,
         isActive: user.isActive,
+        token: token,
       },
     });
   } catch (error) {
