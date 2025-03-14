@@ -9,10 +9,12 @@ const express = require("express");
 const app = express();
 const connectMongo = require("$database/Mongo.database.ts");
 const routes = require("$routes/init.ts").default;
+const cookieParser = require("cookie-parser");
 
 connectMongo;
 
 app.use(express.json());
+app.use(cookieParser());
 app.use("/api", routes);
 app.use(
   "/api-docs",
