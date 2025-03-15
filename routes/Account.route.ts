@@ -1,4 +1,5 @@
 import AccountAPI from "$root/controllers/Account.controller";
+import { auth, isAdmin, checkActive } from "$root/middleware/auth";
 import { Router } from "express";
 
 const router = Router();
@@ -7,12 +8,16 @@ const router = Router();
 router.post("/login", AccountAPI.login);
 router.post("/register", AccountAPI.register);
 router.get("/logout", AccountAPI.logout);
-
-router.get("/", AccountAPI.getAllAccounts);
 router.post("/", AccountAPI.createAccount);
-router.get("/:id", AccountAPI.getAccount);
-router.delete("/:id", AccountAPI.deleteAccount);
-router.put("/:id", AccountAPI.updateAccount);
+
+//Admin routes
+router.get("/", auth, checkActive, isAdmin, AccountAPI.getAllAccounts);
+router.delete("/:id", auth, isAdmin, AccountAPI.deleteAccount);
+
+router.get("/:id", auth, checkActive,  AccountAPI.getAccount);
+router.put("/:id", auth, checkActive, AccountAPI.updateAccount);
+router.post("/changePassword", auth, checkActive, AccountAPI.changePassword);
+
 
 
 

@@ -9,11 +9,16 @@ const express = require("express");
 const app = express();
 const connectMongo = require("$database/Mongo.database.ts");
 const routes = require("$routes/init.ts").default;
+const cookieParser = require("cookie-parser");
 
 connectMongo;
 
 app.use(express.json());
+<<<<<<< HEAD
 
+=======
+app.use(cookieParser());
+>>>>>>> d93b249322719b180bafb0bd6841d361b668ced2
 app.use("/api", routes);
 
 app.use(
