@@ -1,4 +1,5 @@
 import { RoleEnum } from "$root/enums/RoleEnum";
+import Account from "$root/models/Account.model";
 import { Request, Response, NextFunction } from "express";
 import * as jwt from "jsonwebtoken";
 
@@ -43,6 +44,29 @@ const auth = (req: AuthRequest, res: Response, next: NextFunction): void => {
   }
 };
 
+const checkActive = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  if (!req.user) {
+    res.status(500).json({ error: "Authentication middleware must run before checkActive" });
+    return;
+  }
+
+  try {
+    const user = await Account.findById(req.user._id).select("isActive");
+    if (!user) {
+      res.status(401).json({ error: "User not found" });
+      return;
+    }
+    if (!user.isActive) {
+      res.status(403).json({ error: "Account is inactive" });
+      return;
+    }
+    next();
+  } catch (error) {
+    console.error("Error in checkActive:", error instanceof Error ? error.stack : error);
+    res.status(500).json({ error: "Server error during account check" });
+  }
+};
+
 const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
     res.status(500).json({ error: "Authentication middleware must run before isAdmin" });
@@ -72,4 +96,4 @@ const isStaff = (req: AuthRequest, res: Response, next: NextFunction): void => {
 };
 
 // Export as ES6 module
-export { auth, isAdmin, isStaff };
+export { auth, checkActive, isAdmin, isStaff };
