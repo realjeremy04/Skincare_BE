@@ -24,6 +24,7 @@ router.use("/question", questionRoutes);
 router.use("/scoreband", scorebandRoutes);
 router.use("/slots", slotsRoutes);
 router.use("/therapist", therapistRoutes);
+
 router.use("/transaction", transactionRoutes);
 router.use("/userQuiz", userQuizRoutes);
 

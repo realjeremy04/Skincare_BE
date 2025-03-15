@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { ITransaction } from "$types/transaction.interface";
 import { PaymentMethodEnum } from "$root/enums/PaymentMethodEnum";
+const validStatuses = ["pending", "completed", "failed"];
 
 const transactionSchema = new Schema<ITransaction>(
   {
@@ -22,6 +23,8 @@ const transactionSchema = new Schema<ITransaction>(
     status: {
       type: String,
       required: true,
+      enum: validStatuses, // Chỉ nhận 3 giá trị hợp lệ
+
     },
   },
   { timestamps: true }

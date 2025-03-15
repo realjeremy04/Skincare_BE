@@ -1,5 +1,5 @@
 import { errorHandler } from "./middleware/errorHandler.middleware";
-
+import therapistRoutes from "./routes/Therapist.route"; 
 require("module-alias/register");
 require("dotenv").config();
 
@@ -13,7 +13,9 @@ const routes = require("$routes/init.ts").default;
 connectMongo;
 
 app.use(express.json());
+
 app.use("/api", routes);
+
 app.use(
   "/api-docs",
   swaggerUi.serve,
@@ -28,5 +30,4 @@ app.listen(process.env.SERVER_PORT, (err: Error) => {
     console.log(`Server is running on port ${process.env.SERVER_PORT}`);
   }
 });
-
 app.use(errorHandler);
