@@ -7,15 +7,21 @@ require("dotenv").config();
 const { swaggerSpec } = require("$configs/init");
 const swaggerUi = require("swagger-ui-express");
 const express = require("express");
+const cors = require("cors");
 const app = express();
 const connectMongo = require("$database/Mongo.database.ts");
 const routes = require("$routes/init.ts").default;
 const cookieParser = require("cookie-parser");
 
+// Kết nối MongoDB
 connectMongo;
 
+// Middleware
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
+
+// Routes
 app.use("/api", routes);
 
 app.use(
@@ -25,6 +31,7 @@ app.use(
 );
 app.use("/images", express.static(path.join(__dirname, "images")));
 
+// Start server
 app.listen(process.env.SERVER_PORT, (err: Error) => {
   if (err) {
     console.error(err);
@@ -33,4 +40,6 @@ app.listen(process.env.SERVER_PORT, (err: Error) => {
     console.log(`Server is running on port ${process.env.SERVER_PORT}`);
   }
 });
+
+// Error handler
 app.use(errorHandler);

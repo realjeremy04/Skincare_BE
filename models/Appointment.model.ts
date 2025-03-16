@@ -26,11 +26,9 @@ const AppointmentSchema = new Schema<IAppointment>(
     },
     checkInImage: {
       type: String,
-      required: true,
     },
     checkOutImage: {
       type: String,
-      required: true,
     },
     notes: {
       type: String,

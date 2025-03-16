@@ -24,7 +24,6 @@ const transactionSchema = new Schema<ITransaction>(
       type: String,
       required: true,
       enum: validStatuses, // Chỉ nhận 3 giá trị hợp lệ
-
     },
   },
   { timestamps: true }
