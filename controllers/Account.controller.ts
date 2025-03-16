@@ -188,7 +188,7 @@ const getAllAccounts = async (
  *               $ref: '#/components/schemas/Error'
  */
 const getAccount = async (
-  req: AuthenticatedRequest & { params: { id: string } },
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -196,12 +196,7 @@ const getAccount = async (
     return next(new AppError("Authentication required", 401));
   }
   try {
-    const { id } = req.params;
-    if (!id) {
-      return next(new AppError("Account ID is required", 400));
-    }
-
-    const user = await Account.findById(id);
+    const user = await Account.findById(req.user?._id).select('-password');
     if (!user) {
       return next(new AppError("Account not found", 404));
     }
