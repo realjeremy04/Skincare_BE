@@ -7,5 +7,6 @@ export interface IAccount {
   role: RoleEnum;
   avatar: string;
   dob: Date;
+  phone: string;
   isActive: boolean;
 }
