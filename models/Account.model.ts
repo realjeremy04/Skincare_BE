@@ -35,6 +35,10 @@ const AccountSchema = new Schema<IAccount>(
       type: Date,
       required: [true, "Date of Birth is required"],
     },
+    phone:{
+      type: String,
+      required: [true, "Phone is required"],
+    },
     isActive: {
       type: Boolean,
       default: true,
