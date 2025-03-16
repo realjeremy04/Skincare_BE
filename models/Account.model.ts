@@ -27,6 +27,10 @@ const AccountSchema = new Schema<IAccount>(
       default: RoleEnum.Customer,
       required: true,
     },
+    avatar: {
+      type: String,
+      default: "",
+    },
     dob: {
       type: Date,
       required: [true, "Date of Birth is required"],

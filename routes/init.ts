@@ -8,9 +8,10 @@ import shiftsRoutes from "./Shifts.route";
 import questionRoutes from "./Question.route";
 import scorebandRoutes from "./Scoreband.route";
 import slotsRoutes from "./Slots.route";
-import therapistRoutes from "./Therapist.route"
-import transactionRoutes from "./Transaction.route"
-import userQuizRoutes from "./UserQuiz.route"
+import therapistRoutes from "./Therapist.route";
+import transactionRoutes from "./Transaction.route";
+import userQuizRoutes from "./UserQuiz.route";
+import RoadmapRoutes from "./Roadmap.route";
 
 const router = Router();
 
@@ -27,5 +28,6 @@ router.use("/therapist", therapistRoutes);
 
 router.use("/transaction", transactionRoutes);
 router.use("/userQuiz", userQuizRoutes);
+router.use("/roadmap", RoadmapRoutes);
 
 export default router;

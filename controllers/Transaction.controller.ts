@@ -1,7 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import Transaction from "$models/Transaction.model";
+import Appointment from "$models/Appointment.model";
+import Shifts from "$models/Shifts.model";
+import Service from "$models/Service.model";
 import AppError from "$root/utils/AppError.util";
 import { validationResult } from "express-validator";
+
+interface AuthenticatedRequest extends Request {
+  user?: { _id: string; role: string };
+}
 
 /**
  * @swagger
@@ -119,7 +126,7 @@ const getTransaction = async (
  * @swagger
  * /api/transaction:
  *   post:
- *     summary: Create a new transaction
+ *     summary: Create a new transaction with appointment
  *     tags:
  *       - Transaction
  *     requestBody:
@@ -127,47 +134,119 @@ const getTransaction = async (
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Transaction'
+ *             type: object
+ *             properties:
+ *               therapistId:
+ *                 type: string
+ *                 description: TherapistID
+ *               slotsId:
+ *                 type: string
+ *                 description: SlotsID
+ *               serviceId:
+ *                 type: string
+ *                 description: ServiceID
+ *               notes:
+ *                 type: string
+ *                 description: Notes by Customer
+ *               date:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Appointment date in ISO 8601 format
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: ["Cash", "VNPay"]
+ *                 description: Payment method used
  *     responses:
  *       201:
- *         description: The created transaction
+ *         description: The created appointment, shift, and transaction
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Transaction'
+ *               type: object
+ *               properties:
+ *                 newAppointment:
+ *                   $ref: '#/components/schemas/Appointment'
+ *                 shift:
+ *                   $ref: '#/components/schemas/Shift'
+ *                 transaction:
+ *                   $ref: '#/components/schemas/Transaction'
  *       400:
  *         description: Bad request
  *       500:
  *         description: Server error
  */
-export const createTransaction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return next(new AppError(errors.array()[0].msg, 400));
-  }
 
+export const createTransaction = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const { status } = req.body;
-    const validStatuses = ["pending", "completed", "failed"];
-
-    // Kiểm tra giá trị status
-    if (!validStatuses.includes(status)) {
-      return next(new AppError(`Invalid status. Allowed values: ${validStatuses.join(", ")}`, 400));
+    // Kiểm tra các trường bắt buộc
+    if (
+      !req.body.therapistId ||
+      !req.body.slotsId ||
+      !req.body.serviceId ||
+      !req.body.paymentMethod
+    ) {
+      return next(new AppError("Bad request", 400));
+    }
+    if (!req.user) {
+      return next(new AppError("Authentication required", 401));
     }
 
-    const transaction = new Transaction(req.body);
+    // Kiểm tra service
+    const service = await Service.findById(req.body.serviceId);
+    if (!service) {
+      return next(new AppError("Service not found", 404));
+    }
+
+    // Tạo appointment
+    const appointment = new Appointment({
+      therapistId: req.body.therapistId,
+      customerId: req.user._id,
+      slotsId: req.body.slotsId,
+      serviceId: req.body.serviceId,
+      checkInImage: "",
+      checkOutImage: "",
+      notes: req.body.notes,
+      amount: service.price,
+      status: "Scheduled",
+    });
+
+    const newAppointment = await appointment.save();
+
+    // Tạo shift
+    const shift = new Shifts({
+      slotsId: req.body.slotsId,
+      appointmentId: newAppointment._id,
+      therapistId: req.body.therapistId,
+      date: req.body.date,
+      isAvailable: true,
+    });
+
+    await shift.save();
+
+    // Tạo transaction
+    const transaction = new Transaction({
+      customerId: req.user._id,
+      appointmentId: newAppointment._id,
+      paymentMethod: req.body.paymentMethod,
+      status: "pending",
+    });
+
     const newTransaction = await transaction.save();
 
     res.status(201).json({
-      status: "success",
-      message: "Transaction created successfully",
-      data: newTransaction,
+      newAppointment,
+      shift,
+      transaction: newTransaction,
     });
-  } catch (error) {
-    next(new AppError("Failed to create transaction", 500));
+  } catch (err: Error | any) {
+    console.log(err);
+    return next(new AppError("Internal Server Error", 500));
   }
 };
-
 
 // Update an existing transaction
 /**
@@ -197,7 +276,11 @@ export const createTransaction = async (req: Request, res: Response, next: NextF
  *       500:
  *         description: Server error
  */
-export const updateTransaction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const updateTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(new AppError(errors.array()[0].msg, 400));
@@ -214,12 +297,14 @@ export const updateTransaction = async (req: Request, res: Response, next: NextF
       return next(new AppError("Transaction not found", 404));
     }
 
-    res.status(200).json({ message: "Transaction updated successfully", updatedTransaction });
+    res.status(200).json({
+      message: "Transaction updated successfully",
+      updatedTransaction,
+    });
   } catch (error) {
     next(new AppError("Failed to update transaction", 500));
   }
 };
-
 
 // Delete an existing transaction
 /**
@@ -243,14 +328,20 @@ export const updateTransaction = async (req: Request, res: Response, next: NextF
  *       500:
  *         description: Server error
  */
-export const deleteTransaction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const deleteTransaction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(new AppError(errors.array()[0].msg, 400));
   }
 
   try {
-    const deletedTransaction = await Transaction.findByIdAndDelete(req.params.transactionId);
+    const deletedTransaction = await Transaction.findByIdAndDelete(
+      req.params.transactionId
+    );
 
     if (!deletedTransaction) {
       return next(new AppError("Transaction not found", 404));

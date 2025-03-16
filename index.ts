@@ -1,24 +1,27 @@
 import { errorHandler } from "./middleware/errorHandler.middleware";
-import therapistRoutes from "./routes/Therapist.route"; 
+import path from "path";
+
 require("module-alias/register");
 require("dotenv").config();
 
 const { swaggerSpec } = require("$configs/init");
 const swaggerUi = require("swagger-ui-express");
 const express = require("express");
+const cors = require("cors");
 const app = express();
 const connectMongo = require("$database/Mongo.database.ts");
 const routes = require("$routes/init.ts").default;
 const cookieParser = require("cookie-parser");
 
+// Kết nối MongoDB
 connectMongo;
 
+// Middleware
+app.use(cors());
 app.use(express.json());
-<<<<<<< HEAD
-
-=======
 app.use(cookieParser());
->>>>>>> d93b249322719b180bafb0bd6841d361b668ced2
+
+// Routes
 app.use("/api", routes);
 
 app.use(
@@ -26,7 +29,9 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, { explorer: true })
 );
+app.use("/images", express.static(path.join(__dirname, "images")));
 
+// Start server
 app.listen(process.env.SERVER_PORT, (err: Error) => {
   if (err) {
     console.error(err);
@@ -35,4 +40,6 @@ app.listen(process.env.SERVER_PORT, (err: Error) => {
     console.log(`Server is running on port ${process.env.SERVER_PORT}`);
   }
 });
+
+// Error handler
 app.use(errorHandler);

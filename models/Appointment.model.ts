@@ -35,6 +35,7 @@ const AppointmentSchema = new Schema<IAppointment>(
     },
     amount: {
       type: Number,
+      required: true,
     },
     status: {
       type: String,

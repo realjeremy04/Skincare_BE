@@ -1,6 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import Feedback from "$models/Feeback.model";
+import Appointment from "$models/Appointment.model";
 import AppError from "$root/utils/AppError.util";
+
+interface AuthenticatedRequest extends Request {
+  user?: { _id: string; role: string };
+}
 
 /**
  * @swagger
@@ -143,12 +148,28 @@ const getFeedback = async (
  *     summary: Create a new feedback
  *     tags:
  *       - Feedback
+ *     consumes:
+ *       - multipart/form-data
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/Feedback'
+ *             type: object
+ *             properties:
+ *               appointmentId:
+ *                 type: string
+ *                 description: ID of Appointment (use to verify both serviceID and therapistId)
+ *               rating:
+ *                 type: number
+ *                 description: Rating (1-5)
+ *               comment:
+ *                 type: string
+ *                 description: Feedback of Customer
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Images
  *     responses:
  *       201:
  *         description: The created feedback
@@ -158,38 +179,47 @@ const getFeedback = async (
  *               $ref: '#/components/schemas/Feedback'
  *       400:
  *         description: Bad request
+ *       404:
+ *         description: Appointment not found
  *       500:
  *         description: Server error
  */
+
 const createFeedback = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (
-      !req.body.accountId ||
-      !req.body.appointmentId ||
-      !req.body.serviceId ||
-      !req.body.therapistId ||
-      !req.body.rating
-    ) {
+    if (!req.body.appointmentId || !req.body.rating) {
       return next(new AppError("Bad request", 400));
     }
+    if (!req.user) {
+      return next(new AppError("Authentication required", 401));
+    }
+
+    const appointment = await Appointment.findById(req.body.appointmentId);
+    if (!appointment) {
+      return next(new AppError("Appointment not found", 404));
+    }
+
+    const imagePath = req.file
+      ? `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
+      : null;
 
     const feedback = new Feedback({
-      accountId: req.body.accountId,
+      accountId: req.user._id,
       appointmentId: req.body.appointmentId,
-      serviceId: req.body.serviceId,
-      therapistId: req.body.therapistId,
-      images: req.body.images,
+      serviceId: appointment.serviceId,
+      therapistId: appointment.therapistId,
+      images: imagePath || req.body.images,
       comment: req.body.comment,
       rating: req.body.rating,
     });
 
     const newFeedback = await feedback.save();
-    res.status(200).json(newFeedback);
-  } catch (err: Error | any) {
+    res.status(201).json(newFeedback);
+  } catch (err: any) {
     return next(new AppError("Internal Server Error", 500));
   }
 };
