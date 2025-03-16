@@ -1,4 +1,5 @@
 import { errorHandler } from "./middleware/errorHandler.middleware";
+import path from "path";
 
 require("module-alias/register");
 require("dotenv").config();
@@ -21,6 +22,7 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, { explorer: true })
 );
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.listen(process.env.SERVER_PORT, (err: Error) => {
   if (err) {
