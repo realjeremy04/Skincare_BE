@@ -344,9 +344,6 @@ const getShiftsByTherapistId = async (
   try {
     const { therapistId } = req.params;
     const shifts = await Shifts.find({ therapistId });
-    if (!shifts || shifts.length === 0) {
-      return next(new AppError("No shifts found for this therapist", 404));
-    }
 
     res.status(200).json(shifts);
   } catch (err: Error | any) {
@@ -390,11 +387,11 @@ const getUpcomingShiftsByTherapistId = async (
   try {
     const { therapistId } = req.params;
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Đặt thời gian về 00:00:00 để lấy từ đầu ngày hôm nay
+    today.setHours(0, 0, 0, 0); // Set time to 00:00:00 to fetch shifts from today onward
 
     const shifts = await Shifts.find({
       therapistId,
-      date: { $gte: today }, // Chỉ lấy những shift từ hôm nay trở đi
+      date: { $gte: today },
     })
       .populate("slotsId")
       .populate({
@@ -403,12 +400,6 @@ const getUpcomingShiftsByTherapistId = async (
           path: "specialization",
         },
       });
-
-    if (!shifts || shifts.length === 0) {
-      return next(
-        new AppError("No upcoming shifts found for this therapist", 404)
-      );
-    }
 
     res.status(200).json(shifts);
   } catch (err: Error | any) {
