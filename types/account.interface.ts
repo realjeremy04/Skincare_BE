@@ -5,7 +5,6 @@ export interface IAccount {
   password: string;
   email: string;
   role: RoleEnum;
-  avatar: string;
   dob: Date;
   isActive: boolean;
 }

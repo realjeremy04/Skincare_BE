@@ -42,3 +42,7 @@ export const therapistValidation = [
 export const therapistIdValidation = [
   param("therapistId").isMongoId().withMessage("Invalid therapist ID"),
 ];
+
+export const serviceIdValidation = [
+  param("serviceId").isMongoId().withMessage("Invalid service ID"),
+];

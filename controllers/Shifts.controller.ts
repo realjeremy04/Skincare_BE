@@ -66,10 +66,11 @@ const getAllShifts = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const shifts = await Shifts.find()
-      .populate("slotsId")
-      .populate("appointmentId")
-      .populate("therapistId");
+    // const shifts = await Shifts.find()
+    //   .populate("slotsId")
+    //   .populate("appointmentId")
+    //   .populate("therapistId");
+    const shifts = await Shifts.find();
 
     if (!shifts || shifts.length === 0) {
       return next(new AppError("No shifts found", 404));
@@ -306,12 +307,123 @@ const deleteShift = async (
   }
 };
 
+// Get shifts by therapistId
+/**
+ * @swagger
+ * /api/shifts/therapist/{therapistId}:
+ *   get:
+ *     summary: Retrieve shifts by therapistId
+ *     tags:
+ *       - Shifts
+ *     parameters:
+ *       - in: path
+ *         name: therapistId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The therapist ID to filter shifts
+ *     responses:
+ *       200:
+ *         description: A list of shifts for the specified therapist
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Shifts'
+ *       404:
+ *         description: No shifts found for this therapist
+ *       500:
+ *         description: Server error
+ */
+const getShiftsByTherapistId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { therapistId } = req.params;
+    const shifts = await Shifts.find({ therapistId });
+    if (!shifts || shifts.length === 0) {
+      return next(new AppError("No shifts found for this therapist", 404));
+    }
+
+    res.status(200).json(shifts);
+  } catch (err: Error | any) {
+    return next(new AppError("Internal Server Error", 500));
+  }
+};
+
+/**
+ * @swagger
+ * /api/shifts/therapist/upcoming/{therapistId}:
+ *   get:
+ *     summary: Retrieve shifts for today by therapistId
+ *     tags:
+ *       - Shifts
+ *     parameters:
+ *       - in: path
+ *         name: therapistId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The therapist ID to filter today's shifts
+ *     responses:
+ *       200:
+ *         description: A list of today's shifts for the specified therapist
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Shifts'
+ *       404:
+ *         description: No shifts found for this therapist today
+ *       500:
+ *         description: Server error
+ */
+const getUpcomingShiftsByTherapistId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { therapistId } = req.params;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Đặt thời gian về 00:00:00 để lấy từ đầu ngày hôm nay
+
+    const shifts = await Shifts.find({
+      therapistId,
+      date: { $gte: today }, // Chỉ lấy những shift từ hôm nay trở đi
+    })
+      .populate("slotsId")
+      .populate({
+        path: "therapistId",
+        populate: {
+          path: "specialization",
+        },
+      });
+
+    if (!shifts || shifts.length === 0) {
+      return next(
+        new AppError("No upcoming shifts found for this therapist", 404)
+      );
+    }
+
+    res.status(200).json(shifts);
+  } catch (err: Error | any) {
+    return next(new AppError("Internal Server Error", 500));
+  }
+};
+
 const ShiftsAPI = {
   getAllShifts,
   getShift,
   createShift,
   updateShift,
   deleteShift,
+  getShiftsByTherapistId,
+  getUpcomingShiftsByTherapistId,
 };
 
 export default ShiftsAPI;

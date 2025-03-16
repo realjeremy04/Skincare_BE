@@ -66,7 +66,11 @@ import AppError from "$root/utils/AppError.util";
  *       500:
  *         description: Server error
  */
-const getAllTherapists = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const getAllTherapists = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const therapists = await Therapist.find().populate("specialization");
     if (!therapists.length) {
@@ -105,9 +109,15 @@ const getAllTherapists = async (req: Request, res: Response, next: NextFunction)
  *       500:
  *         description: Server error
  */
-const getTherapist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const getTherapist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const therapist = await Therapist.findById(req.params.therapistId).populate("specialization");
+    const therapist = await Therapist.findById(req.params.therapistId).populate(
+      "specialization"
+    );
     if (!therapist) {
       return next(new AppError("Therapist not found", 404));
     }
@@ -139,7 +149,11 @@ const getTherapist = async (req: Request, res: Response, next: NextFunction): Pr
  *       500:
  *         description: Server error
  */
-const createTherapist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const createTherapist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const therapist = new Therapist(req.body);
     const newTherapist = await therapist.save();
@@ -171,7 +185,11 @@ const createTherapist = async (req: Request, res: Response, next: NextFunction):
  *       500:
  *         description: Server error
  */
-const deleteTherapist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const deleteTherapist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const therapist = await Therapist.findByIdAndDelete(req.params.therapistId);
     if (!therapist) {
@@ -211,14 +229,22 @@ const deleteTherapist = async (req: Request, res: Response, next: NextFunction):
  *       500:
  *         description: Server error
  */
-const updateTherapist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const updateTherapist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     // Không cho phép cập nhật accountId
     if ("accountId" in req.body) {
       return next(new AppError("Cannot update accountId", 400));
     }
 
-    const therapist = await Therapist.findByIdAndUpdate(req.params.therapistId, req.body, { new: true });
+    const therapist = await Therapist.findByIdAndUpdate(
+      req.params.therapistId,
+      req.body,
+      { new: true }
+    );
     if (!therapist) {
       return next(new AppError("Therapist not found", 404));
     }
@@ -228,5 +254,73 @@ const updateTherapist = async (req: Request, res: Response, next: NextFunction):
   }
 };
 
-const TherapistAPI = { getAllTherapists, getTherapist, createTherapist, deleteTherapist, updateTherapist };
+//Get all therapist by serviceId
+/**
+ * @swagger
+ * /api/therapist/by-service/{serviceId}:
+ *   get:
+ *     summary: Retrieve therapists by service ID in their specialization
+ *     tags:
+ *       - Therapist
+ *     parameters:
+ *       - in: path
+ *         name: serviceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The service ID to filter therapists by
+ *     responses:
+ *       200:
+ *         description: A list of therapists with the specified service in their specialization
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Therapist'
+ *       400:
+ *         description: Invalid service ID
+ *       404:
+ *         description: No therapists found for this service
+ *       500:
+ *         description: Server error
+ */
+const getTherapistsByServiceId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { serviceId } = req.params;
+
+    // Kiểm tra nếu serviceId không được cung cấp hoặc không hợp lệ
+    if (!serviceId || typeof serviceId !== "string") {
+      return next(new AppError("Invalid service ID", 400));
+    }
+
+    // Tìm các therapist có specialization chứa serviceId
+    const therapists = await Therapist.find({
+      specialization: { $in: [serviceId] },
+    })
+      .populate("accountId")
+      .populate("specialization");
+
+    if (!therapists.length) {
+      return next(new AppError("No therapists found for this service", 404));
+    }
+
+    res.status(200).json(therapists);
+  } catch (error) {
+    next(new AppError("Internal Server Error", 500));
+  }
+};
+
+const TherapistAPI = {
+  getAllTherapists,
+  getTherapist,
+  createTherapist,
+  deleteTherapist,
+  updateTherapist,
+  getTherapistsByServiceId,
+};
 export default TherapistAPI;
