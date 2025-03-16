@@ -619,6 +619,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
       email,
       password: hashedPassword,
       role: RoleEnum.Customer,
+      phone,
       dob: dobDate,
       isActive: true,
     });
