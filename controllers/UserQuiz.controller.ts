@@ -106,23 +106,38 @@ const getAllUserQuizzes = async (
  *       500:
  *         description: Server error
  */
+import { Types } from "mongoose";
+
 const getUserQuiz = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userQuiz = await UserQuiz.findById(req.params.id)
+    const { userQuizId } = req.params;
+
+    // Log để kiểm tra ID
+    console.log("Received ID:", userQuizId);
+
+    if (!Types.ObjectId.isValid(userQuizId)) {
+      return next(new AppError("Invalid user quiz ID format", 400));
+    }
+
+    const userQuiz = await UserQuiz.findById(new Types.ObjectId(userQuizId))
       .populate("accountId")
       .populate("scoreBandId");
+
     if (!userQuiz) {
       return next(new AppError("User quiz not found", 404));
     }
+
     res.status(200).json(userQuiz);
   } catch (err: any) {
+    console.error("Error fetching user quiz:", err);
     return next(new AppError("Internal Server Error", 500));
   }
 };
+
 
 // Create a new user quiz
 /**
@@ -150,45 +165,24 @@ const getUserQuiz = async (
  *       500:
  *         description: Server error
  */
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
+import { validationResult } from "express-validator";
 
-const createUserQuiz = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const createUserQuiz = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new AppError(errors.array()[0].msg, 400));
+  }
+
   try {
-    const { accountId, scoreBandId, result, totalPoint } = req.body;
+    const userQuiz = new UserQuiz(req.body);
+    const newUserQuiz = await userQuiz.save();
+    res.status(201).json({ message: "UserQuiz created successfully", newUserQuiz });
+  } catch (error) {
+    console.log("Request Body:", req.body);
 
-    if (!accountId || !scoreBandId || !result || totalPoint === undefined) {
-      return next(new AppError("All fields are required", 400));
-    }
 
-    if (!Array.isArray(result) || result.length === 0) {
-      return next(new AppError("Result must be a non-empty array", 400));
-    }
-
-    for (const item of result) {
-      if (!item.title || !item.answer || typeof item.point !== "number") {
-        return next(new AppError("Invalid result data", 400));
-      }
-    }
-
-    if (typeof totalPoint !== "number") {
-      return next(new AppError("TotalPoint must be a number", 400));
-    }
-
-    const newUserQuiz = new UserQuiz({
-      accountId,
-      scoreBandId,
-      result,
-      totalPoint,
-    });
-
-    await newUserQuiz.save();
-    res.status(201).json(newUserQuiz);
-  } catch (err: any) {
-    return next(new AppError("Internal Server Error", 500));
+    next(new AppError("Failed to create UserQuiz", 500));
   }
 };
 
@@ -228,27 +222,25 @@ const createUserQuiz = async (
  *       500:
  *         description: Server error
  */
-const updateUserQuiz = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const updateUserQuiz = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new AppError(errors.array()[0].msg, 400));
+  }
+
   try {
-    const updatedUserQuiz = await UserQuiz.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-      }
-    );
+    const updatedUserQuiz = await UserQuiz.findByIdAndUpdate(req.params.userQuizId, req.body, { new: true });
+
     if (!updatedUserQuiz) {
-      return next(new AppError("User quiz not found", 404));
+      return next(new AppError("UserQuiz not found", 404));
     }
-    res.status(200).json(updatedUserQuiz);
-  } catch (err: any) {
-    return next(new AppError("Internal Server Error", 500));
+
+    res.status(200).json({ message: "UserQuiz updated successfully", updatedUserQuiz });
+  } catch (error) {
+    next(new AppError("Failed to update UserQuiz", 500));
   }
 };
+
 
 // Delete a user quiz
 /**
@@ -306,19 +298,22 @@ const updateUserQuiz = async (
  *                 message:
  *                   type: string
  */
-const deleteUserQuiz = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const deleteUserQuiz = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new AppError(errors.array()[0].msg, 400));
+  }
+
   try {
-    const deletedUserQuiz = await UserQuiz.findByIdAndDelete(req.params.id);
+    const deletedUserQuiz = await UserQuiz.findByIdAndDelete(req.params.userQuizId);
+
     if (!deletedUserQuiz) {
-      return next(new AppError("User quiz not found", 404));
+      return next(new AppError("UserQuiz not found", 404));
     }
-    res.status(200).json({ message: "User quiz deleted successfully" });
-  } catch (err: any) {
-    return next(new AppError("Internal Server Error", 500));
+
+    res.status(200).json({ message: "UserQuiz deleted successfully" });
+  } catch (error) {
+    next(new AppError("Failed to delete UserQuiz", 500));
   }
 };
 

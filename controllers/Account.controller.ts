@@ -706,6 +706,11 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
       res.status(401).json({ errors });
       return;
     }
+    if (!user.isActive){
+      errors.push({ msg: "Account is deactivated" });
+      res.status(403).json({ errors });
+      return;
+    }
 
     const token = jwt.sign(
       { _id: user._id, role: user.role },

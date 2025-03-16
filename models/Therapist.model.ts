@@ -10,6 +10,7 @@ const TherapistsSchema = new Schema<ITherapist>({
   specialization: [
     {
       type: Schema.Types.ObjectId,
+      // type:String,
       ref: "Service",
       required: true,
     },
