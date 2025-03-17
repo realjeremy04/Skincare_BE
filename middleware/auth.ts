@@ -30,7 +30,10 @@ const auth = (req: AuthRequest, res: Response, next: NextFunction): void => {
     req.user = decoded; // Attach decoded payload to req.user
     next();
   } catch (error) {
-    console.error("JWT verification error:", error instanceof Error ? error.stack : error);
+    console.error(
+      "JWT verification error:",
+      error instanceof Error ? error.stack : error
+    );
     if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({ error: "Token expired" });
       return;
@@ -44,9 +47,15 @@ const auth = (req: AuthRequest, res: Response, next: NextFunction): void => {
   }
 };
 
-const checkActive = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+const checkActive = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   if (!req.user) {
-    res.status(500).json({ error: "Authentication middleware must run before checkActive" });
+    res
+      .status(500)
+      .json({ error: "Authentication middleware must run before checkActive" });
     return;
   }
 
@@ -62,14 +71,19 @@ const checkActive = async (req: AuthRequest, res: Response, next: NextFunction):
     }
     next();
   } catch (error) {
-    console.error("Error in checkActive:", error instanceof Error ? error.stack : error);
+    console.error(
+      "Error in checkActive:",
+      error instanceof Error ? error.stack : error
+    );
     res.status(500).json({ error: "Server error during account check" });
   }
 };
 
 const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    res.status(500).json({ error: "Authentication middleware must run before isAdmin" });
+    res
+      .status(500)
+      .json({ error: "Authentication middleware must run before isAdmin" });
     return;
   }
 
@@ -81,9 +95,54 @@ const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   next();
 };
 
+const isTherapistOrStaff = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user) {
+    res
+      .status(500)
+      .json({ error: "Authentication middleware must run before isAdmin" });
+    return;
+  }
+
+  if (
+    req.user.role !== RoleEnum.Therapist &&
+    req.user.role !== RoleEnum.Staff
+  ) {
+    res.status(403).json({ error: "Therapist or Staff access required" });
+    return;
+  }
+
+  next();
+};
+
+const isTherapist = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user) {
+    res
+      .status(500)
+      .json({ error: "Authentication middleware must run before isAdmin" });
+    return;
+  }
+
+  if (req.user.role !== RoleEnum.Therapist) {
+    res.status(403).json({ error: "Therapist access required" });
+    return;
+  }
+
+  next();
+};
+
 const isStaff = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    res.status(500).json({ error: "Authentication middleware must run before isStaff" });
+    res
+      .status(500)
+      .json({ error: "Authentication middleware must run before isStaff" });
     return;
   }
 
@@ -95,9 +154,15 @@ const isStaff = (req: AuthRequest, res: Response, next: NextFunction): void => {
   next();
 };
 
-const isStaffOrAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
+const isStaffOrAdmin = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
   if (!req.user) {
-    res.status(500).json({ error: "Authentication middleware must run before isStaffOrAdmin" });
+    res.status(500).json({
+      error: "Authentication middleware must run before isStaffOrAdmin",
+    });
     return;
   }
 
@@ -110,4 +175,12 @@ const isStaffOrAdmin = (req: AuthRequest, res: Response, next: NextFunction): vo
 };
 
 // Export as ES6 module
-export { auth, checkActive, isAdmin, isStaff, isStaffOrAdmin };
+export {
+  auth,
+  checkActive,
+  isAdmin,
+  isStaff,
+  isStaffOrAdmin,
+  isTherapistOrStaff,
+  isTherapist,
+};

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import Shifts from "$models/Shifts.model";
+import Therapist from "$models/Therapist.model";
 import AppError from "$root/utils/AppError.util";
-import { populate } from "dotenv";
 
 /**
  * @swagger
@@ -407,6 +407,72 @@ const getUpcomingShiftsByTherapistId = async (
   }
 };
 
+/**
+ * @swagger
+ * /api/shifts/account/upcoming/{accountId}:
+ *   get:
+ *     summary: Retrieve shifts for today by accountId
+ *     tags:
+ *       - Shifts
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The account ID to filter today's shifts
+ *     responses:
+ *       200:
+ *         description: A list of today's shifts for the specified therapist
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Shifts'
+ *       404:
+ *         description: No shifts found for this therapist today
+ *       500:
+ *         description: Server error
+ */
+const getUpcomingShiftsByAccountId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { accountId } = req.params;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Tìm therapist theo accountId
+    const therapist = await Therapist.findOne({ accountId });
+    if (!therapist) {
+      return next(new AppError("Therapist not found", 404));
+    }
+
+    // Lấy therapistId từ therapist tìm được
+    const { _id: therapistId } = therapist;
+
+    // Tìm ca làm việc của therapist
+    const shifts = await Shifts.find({
+      therapistId,
+      date: { $gte: today },
+    })
+      .populate("slotsId")
+      .populate({
+        path: "therapistId",
+        populate: {
+          path: "specialization",
+        },
+      });
+
+    res.status(200).json(shifts);
+  } catch (err: Error | any) {
+    return next(new AppError("Internal Server Error", 500));
+  }
+};
+
 const ShiftsAPI = {
   getAllShifts,
   getShift,
@@ -415,6 +481,7 @@ const ShiftsAPI = {
   deleteShift,
   getShiftsByTherapistId,
   getUpcomingShiftsByTherapistId,
+  getUpcomingShiftsByAccountId,
 };
 
 export default ShiftsAPI;
