@@ -7,11 +7,11 @@ const SlotSchema = new Schema<ISlots>({
     required: true,
   },
   startTime: {
-    type: Date,
+    type: String,
     required: true,
   },
   endTime: {
-    type: Date,
+    type: String,
     required: true,
   },
 });

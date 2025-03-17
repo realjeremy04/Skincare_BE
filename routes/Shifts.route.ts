@@ -7,6 +7,11 @@ const router = Router();
 router.get("/", ShiftsAPI.getAllShifts);
 router.post("/", auth, checkActive, isStaffOrAdmin, ShiftsAPI.createShift);
 router.get("/:shiftId", ShiftsAPI.getShift);
+router.get("/therapist/:therapistId", ShiftsAPI.getShiftsByTherapistId);
+router.get(
+  "/therapist/upcoming/:therapistId",
+  ShiftsAPI.getUpcomingShiftsByTherapistId
+);
 router.delete("/:shiftId",  auth, checkActive, isStaffOrAdmin, ShiftsAPI.deleteShift);
 router.put("/:shiftId",  auth, checkActive, isStaffOrAdmin, ShiftsAPI.updateShift);
 
