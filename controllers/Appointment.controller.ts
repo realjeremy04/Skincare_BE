@@ -189,8 +189,8 @@ const createAppointment = async (
       customerId: req.body.customerId,
       slotsId: req.body.slotsId,
       serviceId: req.body.serviceId,
-      checkInImage: req.body.checkInImage,
-      checkoutImage: req.body.checkOutImage,
+      checkInImage: req.body.checkInImage || null,
+      checkOutImage: req.body.checkOutImage || null,
       notes: req.body.notes,
       amount: req.body.amount,
       status: req.body.status,
@@ -282,7 +282,7 @@ const deleteAppointment = async (
 /**
  * @swagger
  * /api/appointment/{id}:
- *   put:
+ *   patch:
  *     summary: Update an appointment by ID
  *     description: This endpoint allows the updating of an appointment based on its ID. Returns the updated appointment if successful.
  *     tags:
@@ -320,25 +320,27 @@ const updateAppointment = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    console.log("Update request body:", req.body); // Debug log
     const updatedAppointment = await Appointment.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      {
-        new: true,
-      }
+      { ...req.body, updatedAt: new Date() }, // Add updatedAt timestamp
+      { new: true, runValidators: true }
     );
+
     if (!updatedAppointment) {
       return next(new AppError("Appointment not found", 404));
     }
+
+    console.log("Updated appointment:", updatedAppointment); // Debug log
     res.status(200).json({
       message: "Appointment updated successfully",
       updatedAppointment,
     });
-  } catch (err: Error | any) {
-    return next(new AppError("Internal Server Error", 500));
+  } catch (err: any) {
+    console.error("Error in updateAppointment:", err);
+    return next(new AppError(`Internal Server Error: ${err.message}`, 500));
   }
 };
-
 //Get Appointment by CustomerId
 /**
  * @swagger
