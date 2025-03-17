@@ -196,11 +196,10 @@ const getAccount = async (
     return next(new AppError("Authentication required", 401));
   }
   try {
-    const user = await Account.findById(req.user?._id).select('-password');
+    const user = await Account.findById(req.user?._id).select("-password");
     if (!user) {
       return next(new AppError("Account not found", 404));
-    }
-    else if(!user.isActive){
+    } else if (!user.isActive) {
       return next(new AppError("Account is deactivated", 404));
     }
 
@@ -209,7 +208,10 @@ const getAccount = async (
       user,
     });
   } catch (error) {
-    console.error("Get account error:", error instanceof Error ? error.stack : error);
+    console.error(
+      "Get account error:",
+      error instanceof Error ? error.stack : error
+    );
     return next(new AppError("Internal Server Error", 500));
   }
 };
@@ -241,6 +243,8 @@ const getAccount = async (
  *               dob:
  *                 type: string
  *                 format: date
+ *               phone:
+ *                type: string
  *             required:
  *               - username
  *               - password
@@ -276,19 +280,74 @@ const createAccount = async (
       !req.body.username ||
       !req.body.password ||
       !req.body.email ||
-      !req.body.dob
+      !req.body.dob ||
+      !req.body.role ||
+      !req.body.phone
     ) {
       return next(new AppError("Bad request", 400));
     }
 
-    const user = new Account({
-      username: req.body.username,
-      password: req.body.password,
-      email: req.body.email,
-      role: req.body.role,
-      dob: req.body.dob,
-      isActive: true,
-    });
+    const { username, email, password, dob, phone, role } = req.body;
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const errors: { msg: string }[] = [];
+
+    if (!username || !email || !password || !dob || !phone || !role) {
+      errors.push({
+        msg: "Please enter all required fields (username, email, password, date of birth, phone number)",
+      });
+    }
+    if (password && password.length < 6) {
+      errors.push({ msg: "Password must be at least 6 characters" });
+    }
+    if (errors.length > 0) {
+      res.status(400).json({ errors });
+      return;
+    }
+
+    const dobDate = new Date(dob);
+    if (isNaN(dobDate.getTime())) {
+      errors.push({ msg: "Invalid date of birth format. Use YYYY-MM-DD." });
+      res.status(400).json({ errors });
+      return;
+    }
+
+    const dobYear = dobDate.getFullYear();
+    if (dobYear > currentYear) {
+      errors.push({ msg: "Date of Birth cannot be in the future" });
+      res.status(400).json({ errors });
+      return;
+    }
+    if (dobYear < currentYear - 120) {
+      errors.push({
+        msg: "Date of Birth cannot be more than 120 years in the past",
+      });
+      res.status(400).json({ errors });
+      return;
+    }
+
+    if (phone && phone.length < 10) {
+      errors.push({ msg: "Phone number must be at least 10 digits" });
+    }
+
+    const existingEmail = await Account.findOne({ email });
+    if (existingEmail) {
+      errors.push({ msg: "Email already exists" });
+      res.status(400).json({ errors });
+      return;
+    }
+
+    const existingUsername = await Account.findOne({ username });
+    if (existingUsername) {
+      errors.push({ msg: "Username already exists" });
+      res.status(400).json({ errors });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    req.body.password = hashedPassword;
+
+    const user = new Account(req.body);
 
     const newUser = await user.save();
     res.status(200).json(newUser);
@@ -357,7 +416,7 @@ const createAccount = async (
  *               $ref: '#/components/schemas/Error'
  */
 const deleteAccount = async (
-  req: AuthenticatedRequest ,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -369,9 +428,7 @@ const deleteAccount = async (
   }
 
   try {
- 
-
-    const user = await Account.findByIdAndDelete(req.user?._id);
+    const user = await Account.findByIdAndDelete(req.params?.id);
     if (!user) {
       return next(new AppError("Account not found", 404));
     }
@@ -380,7 +437,10 @@ const deleteAccount = async (
       message: "Account deleted successfully",
     });
   } catch (error) {
-    console.error("Delete account error:", error instanceof Error ? error.stack : error);
+    console.error(
+      "Delete account error:",
+      error instanceof Error ? error.stack : error
+    );
     return next(new AppError("Internal Server Error", 500));
   }
 };
@@ -473,18 +533,15 @@ const updateAccount = async (
   }
 
   try {
-
-
     const updates = req.body;
     if (Object.keys(updates).length === 0) {
       return next(new AppError("No update data provided", 400));
     }
 
-    const user = await Account.findByIdAndUpdate(
-     req.user?._id,
-      updates,
-      { new: true, runValidators: true }
-    );
+    const user = await Account.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    });
     if (!user) {
       return next(new AppError("Account not found", 404));
     }
@@ -494,7 +551,10 @@ const updateAccount = async (
       user,
     });
   } catch (error) {
-    console.error("Update account error:", error instanceof Error ? error.stack : error);
+    console.error(
+      "Update account error:",
+      error instanceof Error ? error.stack : error
+    );
     return next(new AppError("Internal Server Error", 500));
   }
 };
@@ -523,6 +583,8 @@ const updateAccount = async (
  *               dob:
  *                 type: string
  *                 format: date
+ *               phone:
+ *                type: string
  *             required:
  *               - username
  *               - email
@@ -558,7 +620,9 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
   const errors: { msg: string }[] = [];
 
   if (!username || !email || !password || !dob || !phone) {
-    errors.push({ msg: "Please enter all required fields (username, email, password, date of birth, phone number)" });
+    errors.push({
+      msg: "Please enter all required fields (username, email, password, date of birth, phone number)",
+    });
   }
   if (password && password.length < 6) {
     errors.push({ msg: "Password must be at least 6 characters" });
@@ -582,7 +646,9 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
     return;
   }
   if (dobYear < currentYear - 120) {
-    errors.push({ msg: "Date of Birth cannot be more than 120 years in the past" });
+    errors.push({
+      msg: "Date of Birth cannot be more than 120 years in the past",
+    });
     res.status(400).json({ errors });
     return;
   }
@@ -624,8 +690,13 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
       message: "Registration successful, please log in",
     });
   } catch (error) {
-    console.error("Registration error:", error instanceof Error ? error.stack : error);
-    res.status(500).json({ errors: [{ msg: "Server error occurred. Please try again." }] });
+    console.error(
+      "Registration error:",
+      error instanceof Error ? error.stack : error
+    );
+    res
+      .status(500)
+      .json({ errors: [{ msg: "Server error occurred. Please try again." }] });
   }
 };
 
@@ -699,17 +770,15 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
       res.status(401).json({ errors });
       return;
     }
-    if (!user.isActive){
+    if (!user.isActive) {
       errors.push({ msg: "Account is deactivated" });
       res.status(403).json({ errors });
       return;
     }
 
-    const token = jwt.sign(
-      { _id: user._id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    const token = jwt.sign({ _id: user._id, role: user.role }, JWT_SECRET, {
+      expiresIn: "1d",
+    });
 
     res.cookie("jwt", token, {
       httpOnly: true,
@@ -732,7 +801,9 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
     });
   } catch (error) {
     console.error("Login error:", error instanceof Error ? error.stack : error);
-    res.status(500).json({ errors: [{ msg: "Server error occurred. Please try again." }] });
+    res
+      .status(500)
+      .json({ errors: [{ msg: "Server error occurred. Please try again." }] });
   }
 };
 
@@ -770,9 +841,12 @@ const logout = (req: Request, res: Response, next: NextFunction) => {
 
     res.status(200).json({ message: "Logout successful" });
   } catch (error) {
-    console.error("Logout error:", error instanceof Error ? error.stack : error);
+    console.error(
+      "Logout error:",
+      error instanceof Error ? error.stack : error
+    );
     res.status(500).json({
-      errors: [{ msg: "Error during logout process" }]
+      errors: [{ msg: "Error during logout process" }],
     });
   }
 };
@@ -844,7 +918,10 @@ const changePassword = async (
     return next(new AppError("Authentication required", 401));
   }
 
-  const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
+  const { currentPassword, newPassword } = req.body as {
+    currentPassword?: string;
+    newPassword?: string;
+  };
   try {
     const user = await Account.findById(req.user._id);
     if (!user) {
@@ -852,7 +929,9 @@ const changePassword = async (
     }
 
     if (!currentPassword || !newPassword) {
-      return next(new AppError("Current password and new password are required", 400));
+      return next(
+        new AppError("Current password and new password are required", 400)
+      );
     }
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
@@ -861,11 +940,18 @@ const changePassword = async (
     }
 
     if (currentPassword === newPassword) {
-      return next(new AppError("New password must be different from current password", 400));
+      return next(
+        new AppError(
+          "New password must be different from current password",
+          400
+        )
+      );
     }
 
     if (newPassword.length < 6) {
-      return next(new AppError("New password must be at least 6 characters", 400));
+      return next(
+        new AppError("New password must be at least 6 characters", 400)
+      );
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
@@ -873,7 +959,10 @@ const changePassword = async (
     console.log("Password changed for:", user.email);
     res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
-    console.error("Password change error:", error instanceof Error ? error.stack : error);
+    console.error(
+      "Password change error:",
+      error instanceof Error ? error.stack : error
+    );
     return next(new AppError("Password change failed", 500));
   }
 };
@@ -887,7 +976,7 @@ const AccountAPI = {
   login,
   logout,
   register,
-  changePassword
+  changePassword,
 };
 
 export default AccountAPI;
