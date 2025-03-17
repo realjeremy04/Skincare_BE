@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Service from "$models/Service.model";
+import Feedback from "$models/Feeback.model";
 import AppError from "$root/utils/AppError.util";
 
 /**
@@ -115,7 +116,27 @@ const getService = async (
       return next(new AppError("Service not found", 404));
     }
 
-    res.status(200).json(service);
+    const feedbacks =
+      (await Feedback.find({ serviceId: req.params.serviceId })
+        .populate({
+          path: "accountId",
+          select: "username",
+        })
+        .populate({
+          path: "therapistId",
+          select: "_id accountId",
+          populate: {
+            path: "accountId",
+            select: "username",
+          },
+        })) || [];
+
+    const serviceWithFeedbacks = {
+      ...service.toObject(), // Chuyển service từ Mongoose Document sang plain object
+      feedbacks, // Thêm feedbacks vào
+    };
+
+    res.status(200).json({ service: serviceWithFeedbacks });
   } catch (err: Error | any) {
     return next(new AppError("Internal Server Error", 500));
   }
