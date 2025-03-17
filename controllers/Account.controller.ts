@@ -357,7 +357,7 @@ const createAccount = async (
  *               $ref: '#/components/schemas/Error'
  */
 const deleteAccount = async (
-  req: AuthenticatedRequest & { params: { id: string } },
+  req: AuthenticatedRequest ,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -369,19 +369,15 @@ const deleteAccount = async (
   }
 
   try {
-    const { id } = req.params;
-    if (!id) {
-      return next(new AppError("Account ID is required", 400));
-    }
+ 
 
-    const user = await Account.findByIdAndDelete(id);
+    const user = await Account.findByIdAndDelete(req.user?._id);
     if (!user) {
       return next(new AppError("Account not found", 404));
     }
 
     res.status(200).json({
       message: "Account deleted successfully",
-      _id: user._id,
     });
   } catch (error) {
     console.error("Delete account error:", error instanceof Error ? error.stack : error);
@@ -468,7 +464,7 @@ interface UpdateAccountBody {
 }
 
 const updateAccount = async (
-  req: AuthenticatedRequest & { params: { id: string }; body: UpdateAccountBody },
+  req: AuthenticatedRequest & { body: UpdateAccountBody },
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -477,10 +473,7 @@ const updateAccount = async (
   }
 
   try {
-    const { id } = req.params;
-    if (!id) {
-      return next(new AppError("Account ID is required", 400));
-    }
+
 
     const updates = req.body;
     if (Object.keys(updates).length === 0) {
@@ -488,7 +481,7 @@ const updateAccount = async (
     }
 
     const user = await Account.findByIdAndUpdate(
-      id,
+     req.user?._id,
       updates,
       { new: true, runValidators: true }
     );
@@ -619,6 +612,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
       email,
       password: hashedPassword,
       role: RoleEnum.Customer,
+      phone,
       dob: dobDate,
       isActive: true,
     });
@@ -842,7 +836,7 @@ const logout = (req: Request, res: Response, next: NextFunction) => {
  *               $ref: '#/components/schemas/Error'
  */
 const changePassword = async (
-  req: Request & { user?: { _id: string } },
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

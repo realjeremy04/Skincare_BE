@@ -15,7 +15,7 @@ router.get("/", auth, checkActive, isAdmin, AccountAPI.getAllAccounts);
 router.delete("/:id", auth, isAdmin, AccountAPI.deleteAccount);
 
 router.get("/profile", auth, checkActive,  AccountAPI.getAccount);
-router.put("/:id", auth, checkActive, AccountAPI.updateAccount);
+router.put("/updateProfile", auth, checkActive, AccountAPI.updateAccount);
 router.post("/changePassword", auth, checkActive, AccountAPI.changePassword);
 
 
