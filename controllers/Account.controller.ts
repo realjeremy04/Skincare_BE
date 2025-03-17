@@ -521,6 +521,7 @@ interface UpdateAccountBody {
   email?: string;
   role?: string;
   dob?: string;
+  phone?: string;
 }
 
 const updateAccount = async (
