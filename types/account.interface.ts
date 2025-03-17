@@ -6,5 +6,6 @@ export interface IAccount {
   email: string;
   role: RoleEnum;
   dob: Date;
+  phone: string;
   isActive: boolean;
 }

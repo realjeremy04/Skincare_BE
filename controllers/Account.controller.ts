@@ -188,7 +188,7 @@ const getAllAccounts = async (
  *               $ref: '#/components/schemas/Error'
  */
 const getAccount = async (
-  req: AuthenticatedRequest & { params: { id: string } },
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -196,12 +196,7 @@ const getAccount = async (
     return next(new AppError("Authentication required", 401));
   }
   try {
-    const { id } = req.params;
-    if (!id) {
-      return next(new AppError("Account ID is required", 400));
-    }
-
-    const user = await Account.findById(id);
+    const user = await Account.findById(req.user?._id).select('-password');
     if (!user) {
       return next(new AppError("Account not found", 404));
     }
@@ -564,13 +559,13 @@ const updateAccount = async (
  *               $ref: '#/components/schemas/Error'
  */
 const register = async (req: Request, res: Response, next: NextFunction) => {
-  const { username, email, password, dob } = req.body;
+  const { username, email, password, dob, phone } = req.body;
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const errors: { msg: string }[] = [];
 
-  if (!username || !email || !password || !dob) {
-    errors.push({ msg: "Please enter all required fields (username, email, password, date of birth)" });
+  if (!username || !email || !password || !dob || !phone) {
+    errors.push({ msg: "Please enter all required fields (username, email, password, date of birth, phone number)" });
   }
   if (password && password.length < 6) {
     errors.push({ msg: "Password must be at least 6 characters" });
@@ -597,6 +592,10 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
     errors.push({ msg: "Date of Birth cannot be more than 120 years in the past" });
     res.status(400).json({ errors });
     return;
+  }
+
+  if (phone && phone.length < 10) {
+    errors.push({ msg: "Phone number must be at least 10 digits" });
   }
 
   try {
