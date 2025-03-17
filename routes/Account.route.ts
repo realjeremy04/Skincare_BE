@@ -12,13 +12,11 @@ router.post("/", AccountAPI.createAccount);
 
 //Admin routes
 router.get("/", auth, checkActive, isAdmin, AccountAPI.getAllAccounts);
+router.put("/:id", auth, isAdmin, AccountAPI.updateAccount);
 router.delete("/:id", auth, isAdmin, AccountAPI.deleteAccount);
 
-router.get("/profile", auth, checkActive,  AccountAPI.getAccount);
+router.get("/profile", auth, checkActive, AccountAPI.getAccount);
 router.put("/updateProfile", auth, checkActive, AccountAPI.updateAccount);
 router.post("/changePassword", auth, checkActive, AccountAPI.changePassword);
-
-
-
 
 export default router;
