@@ -453,7 +453,13 @@ const getAppointmentsByCustomerId = async (
     const appointments = await Appointment.find({
       customerId: req.params.customerId,
     })
-      .populate("therapistId")
+      .populate({
+        path: "therapistId",
+        populate: {
+          path: "accountId",
+          select: "username",
+        },
+      })
       .populate("customerId")
       .populate("serviceId")
       .populate("slotsId");
