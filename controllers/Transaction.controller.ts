@@ -353,12 +353,67 @@ export const deleteTransaction = async (
   }
 };
 
+/**
+ * @swagger
+ * /api/transaction/customer/{customerId}:
+ *   get:
+ *     summary: Retrieve all transactions for a specific customer
+ *     tags:
+ *       - Transaction
+ *     parameters:
+ *       - in: path
+ *         name: customerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The customer ID
+ *     responses:
+ *       200:
+ *         description: List of transactions for the customer
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Transaction'
+ *       404:
+ *         description: No transactions found for this customer
+ *       500:
+ *         description: Server error
+ */
+const getTransactionsByCustomerId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const transactions = await Transaction.find({
+      customerId: req.params.customerId,
+    })
+      .populate("customerId", "email")
+      .populate("appointmentId", "_id");
+
+    if (!transactions || transactions.length === 0) {
+      return next(new AppError("No transactions found for this customer", 404));
+    }
+
+    res.status(200).json({
+      status: "success",
+      results: transactions.length,
+      data: transactions,
+    });
+  } catch (err: Error | any) {
+    return next(new AppError("Internal Server Error", 500));
+  }
+};
+
 const TransactionAPI = {
   getAllTransactions,
   getTransaction,
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  getTransactionsByCustomerId,
 };
 
 export default TransactionAPI;
