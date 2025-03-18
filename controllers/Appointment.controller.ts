@@ -195,8 +195,8 @@ const createAppointment = async (
       customerId: req.body.customerId,
       slotsId: req.body.slotsId,
       serviceId: req.body.serviceId,
-      checkInImage: req.body.checkInImage,
-      checkoutImage: req.body.checkOutImage,
+      checkInImage: req.body.checkInImage || null,
+      checkOutImage: req.body.checkOutImage || null,
       notes: req.body.notes,
       amount: req.body.amount,
       status: req.body.status,
@@ -410,11 +410,11 @@ const updateAppointment = async (
       message: "Appointment updated successfully",
       data: updatedAppointment,
     });
-  } catch (err: Error | any) {
-    return next(new AppError("Internal Server Error", 500));
+  } catch (err: any) {
+    console.error("Error in updateAppointment:", err);
+    return next(new AppError(`Internal Server Error: ${err.message}`, 500));
   }
 };
-
 //Get Appointment by CustomerId
 /**
  * @swagger
