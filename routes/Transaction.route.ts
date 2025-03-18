@@ -7,7 +7,19 @@ const router = Router();
 router.get("/", TransactionAPI.getAllTransactions);
 router.post("/", auth, checkActive, TransactionAPI.createTransaction);
 router.get("/:transactionId", TransactionAPI.getTransaction);
+router.get(
+  "/customer/:customerId",
+  auth,
+  checkActive,
+  TransactionAPI.getTransactionsByCustomerId
+);
 router.delete("/:transactionId", TransactionAPI.deleteTransaction);
-router.put("/:transactionId", auth, checkActive, isStaffOrAdmin, TransactionAPI.updateTransaction);
+router.put(
+  "/:transactionId",
+  auth,
+  checkActive,
+  isStaffOrAdmin,
+  TransactionAPI.updateTransaction
+);
 
 export default router;

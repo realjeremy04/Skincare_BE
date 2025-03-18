@@ -207,18 +207,35 @@ const createFeedback = async (
       ? `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
       : null;
 
-    const feedback = new Feedback({
+    // Kiểm tra xem người dùng đã feedback cho appointment này chưa
+    const existingFeedback = await Feedback.findOne({
       accountId: req.user._id,
       appointmentId: req.body.appointmentId,
-      serviceId: appointment.serviceId,
-      therapistId: appointment.therapistId,
-      images: imagePath || req.body.images,
-      comment: req.body.comment,
-      rating: req.body.rating,
     });
 
-    const newFeedback = await feedback.save();
-    res.status(201).json(newFeedback);
+    if (existingFeedback) {
+      // Nếu đã có feedback, cập nhật nó
+      existingFeedback.images =
+        imagePath || req.body.images || existingFeedback.images;
+      existingFeedback.comment = req.body.comment || existingFeedback.comment;
+      existingFeedback.rating = req.body.rating;
+      const updatedFeedback = await existingFeedback.save();
+      res.status(200).json(updatedFeedback);
+    } else {
+      // Nếu chưa có, tạo mới feedback
+      const feedback = new Feedback({
+        accountId: req.user._id,
+        appointmentId: req.body.appointmentId,
+        serviceId: appointment.serviceId,
+        therapistId: appointment.therapistId,
+        images: imagePath || req.body.images,
+        comment: req.body.comment,
+        rating: req.body.rating,
+      });
+
+      const newFeedback = await feedback.save();
+      res.status(201).json(newFeedback);
+    }
   } catch (err: any) {
     return next(new AppError("Internal Server Error", 500));
   }
