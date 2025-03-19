@@ -772,6 +772,8 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
  *                   type: string
  *                 user:
  *                   $ref: '#/components/schemas/Account'
+ *                 token:
+ *                   type: string
  *       400:
  *         description: Missing fields
  *         content:
@@ -818,13 +820,7 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
       expiresIn: "1d",
     });
 
-    res.cookie("jwt", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict" as const,
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-
+    // Remove res.cookie and return the token in the response
     console.log("User logged in:", user.email);
     res.status(200).json({
       message: "Login successful",
@@ -834,8 +830,8 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
         dob: user.dob,
         role: user.role,
         isActive: user.isActive,
-        token: token,
       },
+      token, // Return the token directly
     });
   } catch (error) {
     console.error("Login error:", error instanceof Error ? error.stack : error);
@@ -844,6 +840,59 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
       .json({ errors: [{ msg: "Server error occurred. Please try again." }] });
   }
 };
+// const login = async (req: Request, res: Response, next: NextFunction) => {
+//   const { email, password } = req.body as { email?: string; password?: string };
+//   const errors: { msg: string }[] = [];
+
+//   if (!email || !password) {
+//     errors.push({ msg: "Email and password are required" });
+//     res.status(400).json({ errors });
+//     return;
+//   }
+
+//   try {
+//     const user = await Account.findOne({ email });
+//     if (!user || !(await bcrypt.compare(password, user.password))) {
+//       errors.push({ msg: "Invalid credentials" });
+//       res.status(401).json({ errors });
+//       return;
+//     }
+//     if (!user.isActive) {
+//       errors.push({ msg: "Account is deactivated" });
+//       res.status(403).json({ errors });
+//       return;
+//     }
+
+//     const token = jwt.sign({ _id: user._id, role: user.role }, JWT_SECRET, {
+//       expiresIn: "1d",
+//     });
+
+//     res.cookie("jwt", token, {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//       sameSite: "strict" as const,
+//       maxAge: 24 * 60 * 60 * 1000,
+//     });
+
+//     console.log("User logged in:", user.email);
+//     res.status(200).json({
+//       message: "Login successful",
+//       user: {
+//         username: user.username,
+//         email: user.email,
+//         dob: user.dob,
+//         role: user.role,
+//         isActive: user.isActive,
+//         token: token,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Login error:", error instanceof Error ? error.stack : error);
+//     res
+//       .status(500)
+//       .json({ errors: [{ msg: "Server error occurred. Please try again." }] });
+//   }
+// };
 
 /**
  * @swagger
